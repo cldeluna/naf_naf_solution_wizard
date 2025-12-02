@@ -5,18 +5,31 @@
 
 # NAF Solution Wizard
 
-An interactive Streamlit app to design network automation solutions using the NAF framework. It guides you through Presentation, Intent, Observability, Orchestration, Collector, and Executor sections, plus Dependencies and a planning Timeline, then generates a consolidated report and a bundled ZIP containing:
+An interactive Streamlit app to help you describe in a systematic way a proposed network automation solution using the NAF Network Automation Framework. 
 
-- JSON export (naf_report_*.json)
-- Markdown report (naf_report_*.md) generated from your inputs
-- Optional Gantt.png (if Plotly+kaleido is available)
+It guides you through standard solution blocks for a network automation solution: 
+- Presentation, 
+- Intent, 
+- Observability, 
+- Orchestration, 
+- Collector, and 
+- Executor
 
-## Preview the Solution Wizard on Streamlit App page
+It will also walk you through external system Dependencies, Staffing, and a planning Timeline.
+
+With this input, the App will generate a consolidated report and a bundled ZIP containing:
+
+1. Markdown report (naf_report_*.md) generated from your inputs
+2. JSON export (naf_report_*.json) of the input data
+3. Optional Gantt.png (if Plotly+kaleido is available)
+
+## Preview the Solution Wizard on Streamlit App 
 
 Quickly try the Streamlit hosted app [here](https://naf-network-automation-framework-wizard.streamlit.app) to see if it is worth installing!
 
 <a href="https://naf-network-automation-framework-wizard.streamlit.app/"><img src="https://streamlit.io/images/brand/streamlit-mark-color.svg" alt="Open in Streamlit" width="80" /></a>
 
+---
 ## Features
 
 - Guided expanders with sensible defaults; suppresses placeholder text in highlights
@@ -90,9 +103,8 @@ Quickly try the Streamlit hosted app [here](https://naf-network-automation-frame
 ## Notes & Tips
 
 - If Gantt.png is missing, install `kaleido` and retry.
-- The disclaimer link at the bottom uses a markdown link for single‑file apps.
-- Orchestration = “No” is treated as a valid selection (bullet in preview and enables export).
 
 ## License
 
-Python (see headers in source files).
+Apache License
+Version 2.0
