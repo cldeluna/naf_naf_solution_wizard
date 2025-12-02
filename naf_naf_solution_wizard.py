@@ -24,9 +24,6 @@ import streamlit as st
 import plotly.express as px
 
 
-
-
-
 # Optional lightweight holiday support
 try:
     import holidays as _hol
@@ -35,6 +32,12 @@ except Exception:  # pragma: no cover
 
 
 def hr_colors():
+    """
+    Return the color palette used for horizontal rules and branding accents.
+
+    Returns
+    - dict: Mapping of semantic color names to hex codes used throughout the UI.
+    """
     hr_color_dict = {
         "naf_yellow": "#fffe03",
         "eia_blue": "#92c0e4",
@@ -44,6 +47,18 @@ def hr_colors():
 
 
 def thick_hr(color: str = "red", thickness: int = 3, margin: str = "1rem 0"):
+    """
+    Render a visually thick horizontal rule using raw HTML via Streamlit.
+
+    Parameters
+    - color (str): CSS color value for the rule background.
+    - thickness (int): Pixel height of the bar.
+    - margin (str): CSS margin shorthand applied to the rule container.
+
+    Notes
+    - Uses st.markdown with unsafe_allow_html=True to inject an <hr>-like element.
+    - Prefer this for consistent separators across expanders/sidebars.
+    """
     st.markdown(
         f"""
         <hr style="
@@ -58,6 +73,16 @@ def thick_hr(color: str = "red", thickness: int = 3, margin: str = "1rem 0"):
 
 
 def join_human(items: List[str]):
+    """
+    Join a list of strings into a human-friendly phrase.
+
+    Examples
+    - ["A"] -> "A"
+    - ["A","B"] -> "A and B"
+    - ["A","B","C"] -> "A, B and C"
+
+    Returns "TBD" when the input is empty or only contains falsey values.
+    """
     items = [i for i in (items or []) if i]
     if not items:
         return "TBD"
@@ -67,10 +92,28 @@ def join_human(items: List[str]):
 
 
 def md_line(text: str) -> str:
+    """
+    Convert plain text to a single markdown bullet line.
+
+    Parameters
+    - text (str): Content to prefix with a dash.
+
+    Returns
+    - str: "- <text>" when text is truthy, else an empty string.
+    """
     return f"- {text}" if text else ""
 
 
 def is_meaningful(text: str) -> bool:
+    """
+    Determine if a narrative string is considered meaningful content.
+
+    Rules
+    - Empty/whitespace -> False
+    - Contains "tbd" (case-insensitive) -> False
+    - Matches any known default placeholder sentence -> False
+    - Otherwise -> True
+    """
     if not text:
         return False
     t = text.strip().lower()
@@ -84,6 +127,15 @@ def is_meaningful(text: str) -> bool:
 
 
 def _join(items):
+    """
+    Alias to join_human for brevity where a shorter name reads better.
+
+    Parameters
+    - items (List[str]): Strings to join human-readably.
+
+    Returns
+    - str: Humanized join of items or "TBD" when empty.
+    """
     return join_human(items)
 
 
@@ -127,10 +179,25 @@ def main():
 
     with st.sidebar:
         st.image("images/EIA Logo FINAL small_Round.png", width=75)
-        thick_hr(color=hr_color_dict.get("eia_blue", "#92c0e4"), thickness=6, margin="0.5rem 0")
+        thick_hr(
+            color=hr_color_dict.get("eia_blue", "#92c0e4"),
+            thickness=6,
+            margin="0.5rem 0",
+        )
         with st.expander("Load Saved Solution Wizard (JSON)", expanded=False):
+            """
+            Sidebar import/reset controls.
+
+            - Reset to defaults: clears wizard-related session state and restores defaults.
+            - Upload naf_report_*.json: allows Merge/Overwrite to rehydrate a previous session.
+            - Filename must match naf_report_*.json; otherwise show guidance.
+            """
             # Reset to defaults
-            if st.button("Reset to defaults", use_container_width=True, key="wizard_reset_defaults_btn"):
+            if st.button(
+                "Reset to defaults",
+                use_container_width=True,
+                key="wizard_reset_defaults_btn",
+            ):
                 prefixes = (
                     "pres_",
                     "intent_",
@@ -156,22 +223,24 @@ def main():
                         st.session_state.pop(k, None)
                 # Force-uncheck known checkbox/toggle keys in case Streamlit retains widget states
                 for k in list(st.session_state.keys()):
-                    if k.startswith((
-                        "pres_user_",
-                        "pres_interact_",
-                        "pres_tool_",
-                        "pres_auth_",
-                        "intent_dev_",
-                        "intent_prov_",
-                        "obs_state_",
-                        "obs_tool_",
-                        "collector_method_",
-                        "collector_auth_",
-                        "collector_handle_",
-                        "collector_norm_",
-                        "collection_tool_",
-                        "collection_tools_",
-                    )):
+                    if k.startswith(
+                        (
+                            "pres_user_",
+                            "pres_interact_",
+                            "pres_tool_",
+                            "pres_auth_",
+                            "intent_dev_",
+                            "intent_prov_",
+                            "obs_state_",
+                            "obs_tool_",
+                            "collector_method_",
+                            "collector_auth_",
+                            "collector_handle_",
+                            "collector_norm_",
+                            "collection_tool_",
+                            "collection_tools_",
+                        )
+                    ):
                         st.session_state[k] = False
                 # Disable any custom enable toggles
                 for k in [
@@ -198,6 +267,7 @@ def main():
                     "timeline_staffing_plan",
                     "timeline_holiday_region",
                     "timeline_start_date",
+                    "timeline_milestones",
                     "collector_devices",
                     "collector_metrics",
                     "collector_cadence",
@@ -220,9 +290,15 @@ def main():
                 st.session_state.pop("my_role_skills_other", None)
                 st.session_state.pop("my_role_dev_other", None)
                 # Initiative defaults so widgets reset visually
-                st.session_state["automation_title"] = "My new network automation project"
-                st.session_state["automation_description"] = "Here is a short description of my my new network automation project"
-                st.session_state["expected_use"] = "This automation will be used whenever this task needs to be executed."
+                st.session_state["automation_title"] = (
+                    "My new network automation project"
+                )
+                st.session_state["automation_description"] = (
+                    "Here is a short description of my my new network automation project"
+                )
+                st.session_state["expected_use"] = (
+                    "This automation will be used whenever this task needs to be executed."
+                )
                 st.session_state["out_of_scope"] = ""
                 # no separate details field; report is generated
                 # Orchestration defaults so select resets visually
@@ -239,19 +315,31 @@ def main():
                 horizontal=True,
                 key="wizard_merge_mode",
             )
-            uploaded = st.file_uploader("Upload naf_report_*.json", type=["json"], key="wizard_upload_json")
+            uploaded = st.file_uploader(
+                "Upload naf_report_*.json", type=["json"], key="wizard_upload_json"
+            )
             if uploaded is not None:
                 fname = (uploaded.name or "").strip()
                 if not fname.lower().endswith(".json"):
-                    st.error("Invalid file. Please upload a .json file exported from this tool.")
+                    st.error(
+                        "Invalid file. Please upload a .json file exported from this tool."
+                    )
                 elif not fname.lower().startswith("naf_report_"):
-                    st.info("Tip: Expected a file named like 'naf_report_*.json' (use the Save Solution Artifacts download). Rename the file or download a fresh export.")
+                    st.info(
+                        "Tip: Expected a file named like 'naf_report_*.json' (use the Save Solution Artifacts download). Rename the file or download a fresh export."
+                    )
                 else:
-                    if st.button("Apply uploaded JSON", type="primary", key="wizard_apply_upload_btn"):
+                    if st.button(
+                        "Apply uploaded JSON",
+                        type="primary",
+                        key="wizard_apply_upload_btn",
+                    ):
                         try:
                             data = json.load(uploaded)
                             if not isinstance(data, dict):
-                                st.error("Uploaded JSON is not a valid Solution Wizard export (expected an object).")
+                                st.error(
+                                    "Uploaded JSON is not a valid Solution Wizard export (expected an object)."
+                                )
                             else:
                                 # Overwrite: clear existing wizard-related state before applying
                                 if merge_mode == "Overwrite":
@@ -280,22 +368,24 @@ def main():
                                             st.session_state.pop(k, None)
                                     # Force-uncheck known checkbox/toggle keys
                                     for k in list(st.session_state.keys()):
-                                        if k.startswith((
-                                            "pres_user_",
-                                            "pres_interact_",
-                                            "pres_tool_",
-                                            "pres_auth_",
-                                            "intent_dev_",
-                                            "intent_prov_",
-                                            "obs_state_",
-                                            "obs_tool_",
-                                            "collector_method_",
-                                            "collector_auth_",
-                                            "collector_handle_",
-                                            "collector_norm_",
-                                            "collection_tool_",
-                                            "collection_tools_",
-                                        )):
+                                        if k.startswith(
+                                            (
+                                                "pres_user_",
+                                                "pres_interact_",
+                                                "pres_tool_",
+                                                "pres_auth_",
+                                                "intent_dev_",
+                                                "intent_prov_",
+                                                "obs_state_",
+                                                "obs_tool_",
+                                                "collector_method_",
+                                                "collector_auth_",
+                                                "collector_handle_",
+                                                "collector_norm_",
+                                                "collection_tool_",
+                                                "collection_tools_",
+                                            )
+                                        ):
                                             st.session_state[k] = False
                                     for k in [
                                         "pres_user_custom_enable",
@@ -317,7 +407,9 @@ def main():
                                     st.session_state["orch_details_text"] = ""
                                     # Also set My Role radios to sentinel explicitly
                                     st.session_state["my_role_who"] = "— Select one —"
-                                    st.session_state["my_role_skills"] = "— Select one —"
+                                    st.session_state["my_role_skills"] = (
+                                        "— Select one —"
+                                    )
                                     st.session_state["my_role_dev"] = "— Select one —"
                                     st.session_state.pop("my_role_who_other", None)
                                     st.session_state.pop("my_role_skills_other", None)
@@ -327,6 +419,7 @@ def main():
                                         "automation_description",
                                         "expected_use",
                                         "out_of_scope",
+                                        "timeline_milestones",
                                         "timeline_staff_count",
                                         "timeline_staffing_plan",
                                         "timeline_holiday_region",
@@ -336,21 +429,26 @@ def main():
                                         "collector_cadence",
                                         "orch_choice",
                                         "orch_details_text",
-                                        "obs_go_no_go",
-                                        "obs_add_logic_choice",
-                                        "obs_add_logic_text",
                                     ]:
                                         st.session_state.pop(k, None)
                                 # Initiative
                                 ini = data.get("initiative", {}) or {}
                                 if ini.get("title") is not None:
-                                    st.session_state["automation_title"] = ini.get("title")
+                                    st.session_state["automation_title"] = ini.get(
+                                        "title"
+                                    )
                                 if ini.get("description") is not None:
-                                    st.session_state["automation_description"] = ini.get("description")
+                                    st.session_state["automation_description"] = (
+                                        ini.get("description")
+                                    )
                                 if ini.get("expected_use") is not None:
-                                    st.session_state["expected_use"] = ini.get("expected_use")
+                                    st.session_state["expected_use"] = ini.get(
+                                        "expected_use"
+                                    )
                                 if ini.get("out_of_scope") is not None:
-                                    st.session_state["out_of_scope"] = ini.get("out_of_scope")
+                                    st.session_state["out_of_scope"] = ini.get(
+                                        "out_of_scope"
+                                    )
                                 # ignore legacy initiative.solution_details_md in uploads
 
                                 # My Role
@@ -368,7 +466,9 @@ def main():
                                     if who in known_who:
                                         st.session_state["my_role_who"] = who
                                     else:
-                                        st.session_state["my_role_who"] = "Other (fill in)"
+                                        st.session_state["my_role_who"] = (
+                                            "Other (fill in)"
+                                        )
                                         st.session_state["my_role_who_other"] = who
                                 if skills:
                                     known_sk = {
@@ -379,8 +479,12 @@ def main():
                                     if skills in known_sk:
                                         st.session_state["my_role_skills"] = skills
                                     else:
-                                        st.session_state["my_role_skills"] = "Other (fill in)"
-                                        st.session_state["my_role_skills_other"] = skills
+                                        st.session_state["my_role_skills"] = (
+                                            "Other (fill in)"
+                                        )
+                                        st.session_state["my_role_skills_other"] = (
+                                            skills
+                                        )
                                 if dev:
                                     known_dev = {
                                         "I’ll do it myself.",
@@ -390,7 +494,9 @@ def main():
                                     if dev in known_dev:
                                         st.session_state["my_role_dev"] = dev
                                     else:
-                                        st.session_state["my_role_dev"] = "Other (fill in)"
+                                        st.session_state["my_role_dev"] = (
+                                            "Other (fill in)"
+                                        )
                                         st.session_state["my_role_dev_other"] = dev
 
                                 # Presentation
@@ -403,7 +509,9 @@ def main():
                                     if it in known_interact:
                                         st.session_state[f"pres_interact_{it}"] = True
                                     else:
-                                        st.session_state["pres_interact_custom_enable"] = True
+                                        st.session_state[
+                                            "pres_interact_custom_enable"
+                                        ] = True
                                         st.session_state["pres_interact_custom"] = it
                                 known_tools = {
                                     "Python",
@@ -418,7 +526,9 @@ def main():
                                     if t in known_tools:
                                         st.session_state[f"pres_tool_{t}"] = True
                                     else:
-                                        st.session_state["pres_tool_custom_enable"] = True
+                                        st.session_state["pres_tool_custom_enable"] = (
+                                            True
+                                        )
                                         st.session_state["pres_tool_custom"] = t
                                 known_auth = {
                                     "No Authentication (suitable only for demos and very specific use cases)",
@@ -430,7 +540,9 @@ def main():
                                     if a in known_auth:
                                         st.session_state[f"pres_auth_{a}"] = True
                                     else:
-                                        st.session_state["pres_auth_other_enable"] = True
+                                        st.session_state["pres_auth_other_enable"] = (
+                                            True
+                                        )
                                         st.session_state["pres_auth_other_text"] = a
 
                                 # Intent
@@ -456,8 +568,16 @@ def main():
                                         unknown_devs.append(v)
                                 if unknown_devs:
                                     st.session_state["intent_dev_custom_enable"] = True
-                                    st.session_state["intent_dev_custom"] = ", ".join(unknown_devs)
-                                known_prov = {"Text file", "Serialized format (JSON, YAML)", "CSV", "Excel", "API"}
+                                    st.session_state["intent_dev_custom"] = ", ".join(
+                                        unknown_devs
+                                    )
+                                known_prov = {
+                                    "Text file",
+                                    "Serialized format (JSON, YAML)",
+                                    "CSV",
+                                    "Excel",
+                                    "API",
+                                }
                                 unknown_prov = []
                                 for v in intent_sel.get("provided", []) or []:
                                     if v in known_prov:
@@ -466,7 +586,9 @@ def main():
                                         unknown_prov.append(v)
                                 if unknown_prov:
                                     st.session_state["intent_prov_custom_enable"] = True
-                                    st.session_state["intent_prov_custom"] = ", ".join(unknown_prov)
+                                    st.session_state["intent_prov_custom"] = ", ".join(
+                                        unknown_prov
+                                    )
 
                                 # Observability
                                 obs = data.get("observability", {}) or {}
@@ -486,22 +608,36 @@ def main():
                                         st.session_state["obs_tool_other_enable"] = True
                                         st.session_state["obs_tool_other_text"] = t
                                 if obs_sel.get("go_no_go_text") is not None:
-                                    st.session_state["obs_go_no_go"] = obs_sel.get("go_no_go_text")
+                                    st.session_state["obs_go_no_go"] = obs_sel.get(
+                                        "go_no_go_text"
+                                    )
                                 st.session_state["obs_add_logic_choice"] = (
-                                    "Yes" if obs_sel.get("additional_logic_enabled") else "No"
+                                    "Yes"
+                                    if obs_sel.get("additional_logic_enabled")
+                                    else "No"
                                 )
                                 if obs_sel.get("additional_logic_text") is not None:
-                                    st.session_state["obs_add_logic_text"] = obs_sel.get("additional_logic_text")
+                                    st.session_state["obs_add_logic_text"] = (
+                                        obs_sel.get("additional_logic_text")
+                                    )
 
                                 # Orchestration
-                                orch_sel = (data.get("orchestration", {}) or {}).get("selections", {})
+                                orch_sel = (data.get("orchestration", {}) or {}).get(
+                                    "selections", {}
+                                )
                                 if orch_sel.get("choice") is not None:
-                                    st.session_state["orch_choice"] = orch_sel.get("choice")
+                                    st.session_state["orch_choice"] = orch_sel.get(
+                                        "choice"
+                                    )
                                 if orch_sel.get("details") is not None:
-                                    st.session_state["orch_details_text"] = orch_sel.get("details")
+                                    st.session_state["orch_details_text"] = (
+                                        orch_sel.get("details")
+                                    )
 
                                 # Collector
-                                col_sel = (data.get("collector", {}) or {}).get("selections", {})
+                                col_sel = (data.get("collector", {}) or {}).get(
+                                    "selections", {}
+                                )
                                 for m in col_sel.get("methods", []) or []:
                                     for known in [
                                         "SNMP",
@@ -514,34 +650,68 @@ def main():
                                         "Streaming Telemetry",
                                     ]:
                                         if m == known:
-                                            st.session_state[f"collector_method_{known}"] = True
+                                            st.session_state[
+                                                f"collector_method_{known}"
+                                            ] = True
                                             break
                                     else:
-                                        st.session_state["collector_methods_other_enable"] = True
+                                        st.session_state[
+                                            "collector_methods_other_enable"
+                                        ] = True
                                         st.session_state["collector_methods_other"] = m
                                 for a in col_sel.get("auth", []) or []:
-                                    for known in ["Username/Password", "SSH Keys", "OAuth2", "API Token", "mTLS"]:
+                                    for known in [
+                                        "Username/Password",
+                                        "SSH Keys",
+                                        "OAuth2",
+                                        "API Token",
+                                        "mTLS",
+                                    ]:
                                         if a == known:
-                                            st.session_state[f"collector_auth_{known}"] = True
+                                            st.session_state[
+                                                f"collector_auth_{known}"
+                                            ] = True
                                             break
                                     else:
-                                        st.session_state["collector_auth_other_enable"] = True
+                                        st.session_state[
+                                            "collector_auth_other_enable"
+                                        ] = True
                                         st.session_state["collector_auth_other"] = a
                                 for h in col_sel.get("handling", []) or []:
-                                    for known in ["None", "Rate limiting", "Retries", "Exponential backoff", "Buffering/Queue"]:
+                                    for known in [
+                                        "None",
+                                        "Rate limiting",
+                                        "Retries",
+                                        "Exponential backoff",
+                                        "Buffering/Queue",
+                                    ]:
                                         if h == known:
-                                            st.session_state[f"collector_handle_{known}"] = True
+                                            st.session_state[
+                                                f"collector_handle_{known}"
+                                            ] = True
                                             break
                                     else:
-                                        st.session_state["collector_handling_other_enable"] = True
+                                        st.session_state[
+                                            "collector_handling_other_enable"
+                                        ] = True
                                         st.session_state["collector_handling_other"] = h
                                 for n in col_sel.get("normalization", []) or []:
-                                    for known in ["None", "Timestamping", "Tagging/labels", "Topology enrichment", "Schema mapping"]:
+                                    for known in [
+                                        "None",
+                                        "Timestamping",
+                                        "Tagging/labels",
+                                        "Topology enrichment",
+                                        "Schema mapping",
+                                    ]:
                                         if n == known:
-                                            st.session_state[f"collector_norm_{known}"] = True
+                                            st.session_state[
+                                                f"collector_norm_{known}"
+                                            ] = True
                                             break
                                     else:
-                                        st.session_state["collector_norm_other_enable"] = True
+                                        st.session_state[
+                                            "collector_norm_other_enable"
+                                        ] = True
                                         st.session_state["collector_norm_other"] = n
                                 for t in col_sel.get("tools", []) or []:
                                     for known in [
@@ -554,17 +724,27 @@ def main():
                                         "Prometheus",
                                     ]:
                                         if t == known:
-                                            st.session_state[f"collection_tool_{known}"] = True
+                                            st.session_state[
+                                                f"collection_tool_{known}"
+                                            ] = True
                                             break
                                     else:
-                                        st.session_state["collection_tools_other_enable"] = True
+                                        st.session_state[
+                                            "collection_tools_other_enable"
+                                        ] = True
                                         st.session_state["collection_tools_other"] = t
                                 if col_sel.get("devices") is not None:
-                                    st.session_state["collector_devices"] = str(col_sel.get("devices"))
+                                    st.session_state["collector_devices"] = str(
+                                        col_sel.get("devices")
+                                    )
                                 if col_sel.get("metrics_per_sec") is not None:
-                                    st.session_state["collector_metrics"] = str(col_sel.get("metrics_per_sec"))
+                                    st.session_state["collector_metrics"] = str(
+                                        col_sel.get("metrics_per_sec")
+                                    )
                                 if col_sel.get("cadence") is not None:
-                                    st.session_state["collector_cadence"] = str(col_sel.get("cadence"))
+                                    st.session_state["collector_cadence"] = str(
+                                        col_sel.get("cadence")
+                                    )
 
                                 # Dependencies
                                 dep_list = data.get("dependencies", []) or []
@@ -587,34 +767,62 @@ def main():
                                     if key:
                                         st.session_state[f"dep_{key}"] = True
                                         if details:
-                                            st.session_state[f"dep_{key}_details"] = details
+                                            st.session_state[f"dep_{key}_details"] = (
+                                                details
+                                            )
 
                                 # Timeline basics
                                 tl = data.get("timeline", {}) or {}
                                 if tl.get("staff_count") is not None:
-                                    st.session_state["timeline_staff_count"] = int(tl.get("staff_count") or 0)
+                                    st.session_state["timeline_staff_count"] = int(
+                                        tl.get("staff_count") or 0
+                                    )
                                 if tl.get("staffing_plan_md") is not None:
-                                    st.session_state["timeline_staffing_plan"] = tl.get("staffing_plan_md")
+                                    st.session_state["timeline_staffing_plan"] = tl.get(
+                                        "staffing_plan_md"
+                                    )
                                 if tl.get("holiday_region") is not None:
-                                    st.session_state["timeline_holiday_region"] = tl.get("holiday_region") or "None"
+                                    st.session_state["timeline_holiday_region"] = (
+                                        tl.get("holiday_region") or "None"
+                                    )
                                 if tl.get("start_date"):
+                                    parsed = None
                                     try:
-                                        parsed = datetime.datetime.fromisoformat(str(tl.get("start_date"))).date()
+                                        parsed = datetime.datetime.strptime(
+                                            str(tl.get("start_date")), "%Y-%m-%d"
+                                        ).date()
                                     except Exception:
                                         try:
-                                            parsed = datetime.datetime.strptime(str(tl.get("start_date")), "%Y-%m-%d").date()
+                                            parsed = datetime.datetime.fromisoformat(
+                                                str(tl.get("start_date"))
+                                            ).date()
                                         except Exception:
                                             parsed = None
                                     if parsed is not None:
                                         st.session_state["timeline_start_date"] = parsed
 
-                                st.success("Applied uploaded JSON to this session. Widgets will reflect values now.")
+                                # Timeline milestones from items
+                                items = tl.get("items") or []
+                                if isinstance(items, list) and items:
+                                    ms = []
+                                    for it in items:
+                                        try:
+                                            nm = str((it or {}).get("name") or "").strip()
+                                            dur = int((it or {}).get("duration_bd") or 0)
+                                            notes = str((it or {}).get("notes") or "")
+                                        except Exception:
+                                            nm, dur, notes = (str((it or {}).get("name") or ""), 0, str((it or {}).get("notes") or ""))
+                                        ms.append({"name": nm, "duration": dur, "notes": notes})
+                                    if ms:
+                                        st.session_state["timeline_milestones"] = ms
+
+                                st.success(
+                                    "Applied uploaded JSON to this session. Widgets will reflect values now."
+                                )
                                 st.rerun()
 
                         except Exception as e:
                             st.error(f"Failed to load JSON: {e}")
-
-        
 
     # Build a local payload for this run (no persistence/state-sharing)
     payload = {}
@@ -654,6 +862,11 @@ def main():
 
     # My Role (collapsed by default)
     with st.expander("My Role", expanded=False):
+        """
+        Capture who is filling in the wizard and their skill/role context.
+
+        Populates payload.my_role and is used to gate exporting and highlights visibility.
+        """
         SENTINEL_SELECT = "— Select one —"
         # Q1: Who’s filling out this wizard?
         st.subheader("Who’s filling out this wizard?")
@@ -727,6 +940,11 @@ def main():
 
     # Automation Project Title & Short Description (shared with Business Case page)
     with st.expander("Automation Project Title & Description", expanded=True):
+        """
+        Initiative basics that seed both the Wizard and the Business Case page.
+
+        Includes title, short description/scope, expected use, out of scope, and detailed description.
+        """
         st.caption(
             "One-way sync to Business Case when empty or default: Title, Short description, Expected use, Out of scope, and Detailed description."
         )
@@ -782,6 +1000,9 @@ def main():
 
     # Collapsible guiding questions
     with st.expander("Guiding Questions by Framework Component", expanded=False):
+        """
+        Reference prompts to help users think through each framework component.
+        """
         st.markdown(
             """
             - **Intent**
@@ -814,6 +1035,11 @@ def main():
 
     # Presentation section
     with st.expander("Presentation", expanded=False):
+        """
+        Presentation layer inputs: users, interactions, tools, and auth.
+
+        Drives narrative under payload.presentation and summary rendering.
+        """
         st.markdown(
             """
         **Presentation Layer Characteristics**
@@ -891,7 +1117,7 @@ def main():
         auth_opts_pres = [
             "No Authentication (suitable only for demos and very specific use cases)",
             "Repository authorization/sharing",
-            "built in Authentication via Username/Password or TOKEN",
+            "Built-in (to the automation) Authentication via Username/Password or TOKEN",
             "Custom Authentication to external system (AD, SSH Keys, OAUTH2)",
         ]
         auth_checks_pres = {}
@@ -975,6 +1201,11 @@ def main():
 
     # Intent section
     with st.expander("Intent", expanded=False):
+        """
+        Intent inputs: what will be developed vs what exists today.
+
+        Populates payload.intent and influences highlights and export.
+        """
 
         st.markdown(
             """
@@ -1083,6 +1314,11 @@ def main():
 
     # Observability section
     with st.expander("Observability", expanded=False):
+        """
+        Observability inputs: health signals, go/no-go logic, and tools.
+
+        Populates payload.observability with selections and narrative strings.
+        """
         st.markdown(
             """
             - Supports historical data persistence with powerful programmatic access for analytics, reporting, and troubleshooting.
@@ -1182,7 +1418,9 @@ def main():
         if selected_tools_obs:
             lines.append(f"- {tools_sentence_obs}")
         if not lines:
-            st.info("Make selections above to see highlights for the Observability section.")
+            st.info(
+                "Make selections above to see highlights for the Observability section."
+            )
         else:
             st.markdown("\n".join(lines))
 
@@ -1204,6 +1442,11 @@ def main():
 
     # Orchestration section
     with st.expander("Orchestration", expanded=False):
+        """
+        Orchestration strategy: select No, internal scripts, or describe details.
+
+        Generates an orchestration summary used for preview and export and gates downloads.
+        """
 
         st.markdown(
             """
@@ -1265,7 +1508,9 @@ def main():
         thick_hr(color="#6785a0", thickness=3)
         st.markdown("**Preview Solution Highlights**")
         if orch_choice == ORCH_SENTINEL:
-            st.info("Make selections above to see highlights for the Orchestration section.")
+            st.info(
+                "Make selections above to see highlights for the Orchestration section."
+            )
         else:
             _orch_lines = []
             if orch_sentence.strip():
@@ -1283,6 +1528,11 @@ def main():
 
     # Collector section
     with st.expander("Collector", expanded=False):
+        """
+        Collection layer: methods, auth, handling, normalization/scale, and tools.
+
+        Populates payload.collector and contributes to highlights and export.
+        """
         st.markdown(
             """
             The collection layer focuses on retrieving the actual state of the network over time and ideally presenting it in a normalized format.
@@ -1505,6 +1755,9 @@ def main():
 
     # Executor section
     with st.expander("Executor", expanded=False):
+        """
+        Execution layer: how intent/changes will be applied to the network.
+        """
         st.markdown(
             """
             The executor executes the actual changes to the network.
@@ -1572,6 +1825,9 @@ def main():
 
     # Dependencies & External Interfaces
     with st.expander("Dependencies & External Interfaces", expanded=False):
+        """
+        Dependencies selector: external systems and interfaces this solution relies on.
+        """
         st.caption(
             "Select the external systems this automation will interact with and add details where applicable."
         )
@@ -1676,6 +1932,11 @@ def main():
 
     # Staffing, Timeline, & Milestones
     with st.expander("Staffing, Timeline, & Milestones", expanded=False):
+        """
+        Planning inputs: staffing counts/plan, start date, and milestone durations.
+
+        Drives computed schedule and optional Gantt export.
+        """
         st.caption(
             "Capture a high-level plan with durations in business days. Start date drives scheduled dates."
         )
@@ -1969,21 +2230,36 @@ def main():
 
             # Narrative-based flags (suppressed when 'TBD' or placeholder text)
             pres_flag = any(
-                is_meaningful(pres_narr.get(k)) for k in ("users", "interaction", "tools", "auth")
+                is_meaningful(pres_narr.get(k))
+                for k in ("users", "interaction", "tools", "auth")
             )
             intent_flag = any(
                 is_meaningful(intent_narr.get(k)) for k in ("development", "provided")
             )
             obs_flag = any(
-                is_meaningful(obs_narr.get(k)) for k in ("methods", "go_no_go", "additional_logic", "tools")
+                is_meaningful(obs_narr.get(k))
+                for k in ("methods", "go_no_go", "additional_logic", "tools")
             )
-            _orch_sel = (orch_narr.get("selections") or {}) if isinstance(orch_narr, dict) else {}
+            _orch_sel = (
+                (orch_narr.get("selections") or {})
+                if isinstance(orch_narr, dict)
+                else {}
+            )
             _orch_choice = (_orch_sel.get("choice") or "").strip()
             # Count any non-sentinel choice (including 'No') as content for gating exports
-            orch_flag = bool(_orch_choice and _orch_choice != "— Select one —") or is_meaningful(orch_narr.get("summary"))
+            orch_flag = bool(
+                _orch_choice and _orch_choice != "— Select one —"
+            ) or is_meaningful(orch_narr.get("summary"))
             coll_flag = any(
                 is_meaningful(coll_narr.get(k))
-                for k in ("methods", "auth", "handling", "normalization", "scale", "tools")
+                for k in (
+                    "methods",
+                    "auth",
+                    "handling",
+                    "normalization",
+                    "scale",
+                    "tools",
+                )
             )
             exec_flag = is_meaningful(exec_narr.get("methods"))
 
@@ -1991,7 +2267,10 @@ def main():
             deps_flag = False
             if deps:
                 deps_slim = [
-                    {"name": (d or {}).get("name"), "details": (d or {}).get("details", "").strip()}
+                    {
+                        "name": (d or {}).get("name"),
+                        "details": (d or {}).get("details", "").strip(),
+                    }
                     for d in deps
                     if (d or {}).get("name")
                 ]
@@ -1999,8 +2278,13 @@ def main():
                     {"name": "Network Infrastructure", "details": ""},
                     {"name": "Revision Control system", "details": "GitHub"},
                 ]
+
                 def _sorted(items):
-                    return sorted(items, key=lambda x: (x.get("name") or "", x.get("details") or ""))
+                    return sorted(
+                        items,
+                        key=lambda x: (x.get("name") or "", x.get("details") or ""),
+                    )
+
                 deps_flag = _sorted(deps_slim) != _sorted(default_deps)
 
             # Timeline: do NOT trigger content based on default items/dates
@@ -2009,14 +2293,33 @@ def main():
 
             # Initiative: ignore known defaults
             default_title = "My new network automation project"
-            default_desc = "Here is a short description of my my new network automation project"
+            default_desc = (
+                "Here is a short description of my my new network automation project"
+            )
             title = (ini.get("title") or "").strip()
             desc = (ini.get("description") or "").strip()
-            ini_flag = bool((title and title != default_title) or (desc and desc != default_desc))
+            ini_flag = bool(
+                (title and title != default_title) or (desc and desc != default_desc)
+            )
             # My Role: any non-empty answer
-            role_flag = any(((my_role.get(k) or "").strip()) for k in ("who", "skills", "developer"))
+            role_flag = any(
+                ((my_role.get(k) or "").strip()) for k in ("who", "skills", "developer")
+            )
 
-            return any([pres_flag, intent_flag, obs_flag, orch_flag, coll_flag, exec_flag, deps_flag, tl_flag, ini_flag, role_flag])
+            return any(
+                [
+                    pres_flag,
+                    intent_flag,
+                    obs_flag,
+                    orch_flag,
+                    coll_flag,
+                    exec_flag,
+                    deps_flag,
+                    tl_flag,
+                    ini_flag,
+                    role_flag,
+                ]
+            )
         except Exception:
             pass
         return False
@@ -2066,6 +2369,7 @@ def main():
             "coll": (payload.get("collector", {}) or {}).get("selections", {}),
             "exec": (payload.get("executor", {}) or {}).get("selections", {}),
         }
+
         def _has_list_selections(d: dict) -> bool:
             if not isinstance(d, dict):
                 return False
@@ -2073,20 +2377,32 @@ def main():
                 if isinstance(val, list) and len(val) > 0:
                     return True
             return False
+
         has_any_selection = any(_has_list_selections(v) for v in sel.values())
-        role_nonempty = any(((payload.get("my_role", {}) or {}).get(k) or "").strip() for k in ("who", "skills", "developer"))
+        role_nonempty = any(
+            ((payload.get("my_role", {}) or {}).get(k) or "").strip()
+            for k in ("who", "skills", "developer")
+        )
         ini = payload.get("initiative", {}) or {}
         default_title = "My new network automation project"
-        default_desc = "Here is a short description of my my new network automation project"
+        default_desc = (
+            "Here is a short description of my my new network automation project"
+        )
         _title = (ini.get("title") or "").strip()
         _desc = (ini.get("description") or "").strip()
-        ini_nondefault = bool((_title and _title != default_title) or (_desc and _desc != default_desc))
+        ini_nondefault = bool(
+            (_title and _title != default_title) or (_desc and _desc != default_desc)
+        )
         orch_sel = (payload.get("orchestration", {}) or {}).get("selections", {}) or {}
-        orch_choice = (orch_sel.get("choice") or "").strip() or (st.session_state.get("orch_choice") or "").strip()
+        orch_choice = (orch_sel.get("choice") or "").strip() or (
+            st.session_state.get("orch_choice") or ""
+        ).strip()
         orch_details = (orch_sel.get("details") or "").strip()
         # Treat any non-sentinel choice (including 'No') as a meaningful change for gating
         orch_nondefault = bool(orch_choice and orch_choice != "— Select one —")
-        if not (has_any_selection or ini_nondefault or orch_nondefault or role_nonempty):
+        if not (
+            has_any_selection or ini_nondefault or orch_nondefault or role_nonempty
+        ):
             st.info(
                 "Start filling in the sections above to see Solution Highlights here. Once you provide inputs, you will also be able to download the Wizard JSON."
             )
@@ -2115,7 +2431,9 @@ def main():
         ini = payload.get("initiative", {})
         ini_lines = []
         default_title = "My new network automation project"
-        default_desc = "Here is a short description of my my new network automation project"
+        default_desc = (
+            "Here is a short description of my my new network automation project"
+        )
         _title = (ini.get("title") or "").strip()
         _desc = (ini.get("description") or "").strip()
         _out = (ini.get("out_of_scope") or "").strip()
@@ -2184,7 +2502,10 @@ def main():
         dep_lines = []
         if deps:
             deps_slim = [
-                {"name": (d or {}).get("name"), "details": (d or {}).get("details", "").strip()}
+                {
+                    "name": (d or {}).get("name"),
+                    "details": (d or {}).get("details", "").strip(),
+                }
                 for d in deps
                 if (d or {}).get("name")
             ]
@@ -2192,14 +2513,20 @@ def main():
                 {"name": "Network Infrastructure", "details": ""},
                 {"name": "Revision Control system", "details": "GitHub"},
             ]
+
             def _sorted(items):
-                return sorted(items, key=lambda x: (x.get("name") or "", x.get("details") or ""))
+                return sorted(
+                    items, key=lambda x: (x.get("name") or "", x.get("details") or "")
+                )
+
             if _sorted(deps_slim) != _sorted(default_deps):
                 for d in deps_slim:
                     name = d.get("name")
                     details = d.get("details")
                     if name:
-                        dep_lines.append(f"- {name}{(': ' + details) if details else ''}")
+                        dep_lines.append(
+                            f"- {name}{(': ' + details) if details else ''}"
+                        )
         summary_parts.append(
             _section_md("Dependencies & External Interfaces", dep_lines)
         )
@@ -2221,15 +2548,24 @@ def main():
                 tl_lines.append(
                     f"  - {i.get('name')}: {i.get('start')} → {i.get('end')} ({i.get('duration_bd')} bd)"
                 )
-            summary_parts.append(_section_md("Staffing, Timeline, & Milestones", tl_lines))
+            summary_parts.append(
+                _section_md("Staffing, Timeline, & Milestones", tl_lines)
+            )
         if tl_staff_md:
             summary_parts.append("\n## Staffing Plan\n")
             summary_parts.append(tl_staff_md + "\n")
 
         summary_md = ("".join(summary_parts)).strip()
         if summary_md:
-            with st.expander("Detailed solution description (Markdown supported)", expanded=False):
-                st.caption("Preview of the report that will be included in the download.")
+            with st.expander(
+                "Detailed solution description (Markdown supported)", expanded=False
+            ):
+                """
+                Live preview of the report that will be written into the ZIP (naf_report_*.md).
+                """
+                st.caption(
+                    "Preview of the report that will be included in the download."
+                )
                 st.markdown(summary_md)
 
     if any_content:
@@ -2237,7 +2573,9 @@ def main():
         final_payload = dict(payload)
         final_payload = dict(payload) if isinstance(payload, dict) else {}
         # Ensure initiative exists (without solution_details_md)
-        if "initiative" not in final_payload or not isinstance(final_payload.get("initiative"), dict):
+        if "initiative" not in final_payload or not isinstance(
+            final_payload.get("initiative"), dict
+        ):
             final_payload["initiative"] = {}
 
         # Defaults for sections
@@ -2409,9 +2747,7 @@ def main():
 
         # SDD Markdown rendered via Jinja2 template
         sdd_ts = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-        templates_dir = (
-            Path(__file__).resolve().parent / "templates"
-        ).as_posix()
+        templates_dir = (Path(__file__).resolve().parent / "templates").as_posix()
         try:
             env = Environment(loader=FileSystemLoader(templates_dir))
             tmpl = env.get_template("Solution_Design_Report.j2")
@@ -2557,7 +2893,11 @@ def main():
             "coll": (payload.get("collector", {}) or {}).get("selections", {}),
             "exec": (payload.get("executor", {}) or {}).get("selections", {}),
         }
-        role_nonempty = any(((payload.get("my_role", {}) or {}).get(k) or "").strip() for k in ("who", "skills", "developer"))
+        role_nonempty = any(
+            ((payload.get("my_role", {}) or {}).get(k) or "").strip()
+            for k in ("who", "skills", "developer")
+        )
+
         def _has_list_selections(d: dict) -> bool:
             if not isinstance(d, dict):
                 return False
@@ -2565,15 +2905,24 @@ def main():
                 if isinstance(val, list) and len(val) > 0:
                     return True
             return False
-        has_any_selection = any(_has_list_selections(v) for v in sel.values()) or role_nonempty
+
+        has_any_selection = (
+            any(_has_list_selections(v) for v in sel.values()) or role_nonempty
+        )
         ini = payload.get("initiative", {}) or {}
         default_title = "My new network automation project"
-        default_desc = "Here is a short description of my my new network automation project"
+        default_desc = (
+            "Here is a short description of my my new network automation project"
+        )
         _title = (ini.get("title") or "").strip()
         _desc = (ini.get("description") or "").strip()
-        ini_nondefault = bool((_title and _title != default_title) or (_desc and _desc != default_desc))
+        ini_nondefault = bool(
+            (_title and _title != default_title) or (_desc and _desc != default_desc)
+        )
         orch_sel = (payload.get("orchestration", {}) or {}).get("selections", {}) or {}
-        orch_choice = (orch_sel.get("choice") or "").strip() or (st.session_state.get("orch_choice") or "").strip()
+        orch_choice = (orch_sel.get("choice") or "").strip() or (
+            st.session_state.get("orch_choice") or ""
+        ).strip()
         orch_details = (orch_sel.get("details") or "").strip()
         # Treat any non-sentinel choice (including 'No') as a meaningful change for gating
         orch_nondefault = bool(orch_choice and orch_choice != "— Select one —")
@@ -2603,6 +2952,7 @@ def main():
             "coll": (payload.get("collector", {}) or {}).get("selections", {}),
             "exec": (payload.get("executor", {}) or {}).get("selections", {}),
         }
+
         def _has_list_selections(d: dict) -> bool:
             if not isinstance(d, dict):
                 return False
@@ -2610,30 +2960,52 @@ def main():
                 if isinstance(val, list) and len(val) > 0:
                     return True
             return False
+
         has_any_selection = any(_has_list_selections(v) for v in sel.values())
-        role_nonempty = any(((payload.get("my_role", {}) or {}).get(k) or "").strip() for k in ("who", "skills", "developer"))
+        role_nonempty = any(
+            ((payload.get("my_role", {}) or {}).get(k) or "").strip()
+            for k in ("who", "skills", "developer")
+        )
         ini = payload.get("initiative", {}) or {}
         default_title = "My new network automation project"
-        default_desc = "Here is a short description of my my new network automation project"
+        default_desc = (
+            "Here is a short description of my my new network automation project"
+        )
         _title = (ini.get("title") or "").strip()
         _desc = (ini.get("description") or "").strip()
-        ini_nondefault = bool((_title and _title != default_title) or (_desc and _desc != default_desc))
+        ini_nondefault = bool(
+            (_title and _title != default_title) or (_desc and _desc != default_desc)
+        )
         orch_sel = (payload.get("orchestration", {}) or {}).get("selections", {}) or {}
-        orch_choice = (orch_sel.get("choice") or "").strip() or (st.session_state.get("orch_choice") or "").strip()
+        orch_choice = (orch_sel.get("choice") or "").strip() or (
+            st.session_state.get("orch_choice") or ""
+        ).strip()
         orch_nondefault = bool(orch_choice and orch_choice != "— Select one —")
-        if orch_nondefault and not (has_any_selection or ini_nondefault or role_nonempty):
+        if orch_nondefault and not (
+            has_any_selection or ini_nondefault or role_nonempty
+        ):
             # Minimal payload & ZIP (JSON + minimal MD)
             final_payload = dict(payload) if isinstance(payload, dict) else {}
-            if "initiative" not in final_payload or not isinstance(final_payload.get("initiative"), dict):
+            if "initiative" not in final_payload or not isinstance(
+                final_payload.get("initiative"), dict
+            ):
                 final_payload["initiative"] = {}
             final_payload_bytes = json.dumps(final_payload, indent=2).encode("utf-8")
             ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            title_for_zip = re.sub(r"[^A-Za-z0-9_-]+", "_", (_title or "solution")).strip("_") or "solution"
+            title_for_zip = (
+                re.sub(r"[^A-Za-z0-9_-]+", "_", (_title or "solution")).strip("_")
+                or "solution"
+            )
             zip_name = f"{title_for_zip}_{ts}.zip"
             zip_buf = io.BytesIO()
-            with zipfile.ZipFile(zip_buf, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+            with zipfile.ZipFile(
+                zip_buf, mode="w", compression=zipfile.ZIP_DEFLATED
+            ) as zf:
                 zf.writestr(f"{title_for_zip}_{ts}.json", final_payload_bytes)
-                zf.writestr(f"{title_for_zip}_{ts}.md", ("# Solution Design Document\n\n").encode("utf-8"))
+                zf.writestr(
+                    f"{title_for_zip}_{ts}.md",
+                    ("# Solution Design Document\n\n").encode("utf-8"),
+                )
             zip_bytes = zip_buf.getvalue()
             with st.sidebar.expander("Save Solution Artifacts", expanded=True):
                 st.caption("Download your current scenario (JSON + Markdown + Gantt)")
@@ -2656,7 +3028,11 @@ def main():
 
     # Sidebar bottom branding (below Export)
     with st.sidebar:
-        thick_hr(color=hr_color_dict.get("naf_yellow", "#fffe03"), thickness=6, margin="0.75rem 0 0.25rem 0")
+        thick_hr(
+            color=hr_color_dict.get("naf_yellow", "#fffe03"),
+            thickness=6,
+            margin="0.75rem 0 0.25rem 0",
+        )
         st.image("images/naf_icon.png", width=90)
 
 
