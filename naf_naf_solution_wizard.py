@@ -1538,11 +1538,9 @@ def main():
 
     # Collector section
     with st.expander("Collector", expanded=False):
-        """
-        Collection layer: methods, auth, handling, normalization/scale, and tools.
+        # Collection layer: methods, auth, handling, normalization/scale, and tools.
+        # Populates payload.collector and contributes to highlights and export.
 
-        Populates payload.collector and contributes to highlights and export.
-        """
         st.markdown(
             """
             The collection layer focuses on retrieving the actual state of the network over time and ideally presenting it in a normalized format.
@@ -1766,7 +1764,7 @@ def main():
     # Executor section
     with st.expander("Executor", expanded=False):
         """
-        Execution layer: how intent/changes will be applied to the network.
+        Execution Block: Describes how intent/changes will be applied to the network.
         """
         st.markdown(
             """
@@ -1835,9 +1833,8 @@ def main():
 
     # Dependencies & External Interfaces
     with st.expander("Dependencies & External Interfaces", expanded=False):
-        """
-        Dependencies selector: external systems and interfaces this solution relies on.
-        """
+        # Dependencies selector: external systems and interfaces this solution relies on.
+
         st.caption(
             "Select the external systems this automation will interact with and add details where applicable."
         )
@@ -2221,7 +2218,7 @@ def main():
         }
 
     # Local payload compiled above
-    # Determine if there is meaningful content across sections
+    # Determine if there is meaningful content across sections (the user has made updates
     def _has_any_content(p: dict) -> bool:
         try:
             # Prefer narrative strings, which include 'TBD' for empties and are filtered by is_meaningful
