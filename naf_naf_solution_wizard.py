@@ -178,20 +178,26 @@ def main():
     hr_color_dict = hr_colors()
 
     with st.sidebar:
-        st.image("images/EIA Logo FINAL small_Round.png", width=75)
+        col_logo, col_links = st.columns([1, 2])
+        with col_logo:
+            st.image("images/EIA Logo FINAL small_Round.png", width='stretch')
+        with col_links:
+            # External links
+            st.markdown("[🏠 EIA Home](https://eianow.com)")
+            st.markdown("[[in] EIA on LinkedIn](https://www.linkedin.com/company/eianow/)")
+
         thick_hr(
             color=hr_color_dict.get("eia_blue", "#92c0e4"),
             thickness=6,
             margin="0.5rem 0",
         )
         with st.expander("Load Saved Solution Wizard (JSON)", expanded=False):
-            """
-            Sidebar import/reset controls.
+            # Sidebar import/reset controls.
+            #
+            # - Reset to defaults: clears wizard-related session state and restores defaults.
+            # - Upload naf_report_*.json: allows Merge/Overwrite to rehydrate a previous session.
+            # - Filename must match naf_report_*.json; otherwise show guidance.
 
-            - Reset to defaults: clears wizard-related session state and restores defaults.
-            - Upload naf_report_*.json: allows Merge/Overwrite to rehydrate a previous session.
-            - Filename must match naf_report_*.json; otherwise show guidance.
-            """
             # Reset to defaults
             if st.button(
                 "Reset to defaults",
@@ -3054,6 +3060,7 @@ def main():
             margin="0.75rem 0 0.25rem 0",
         )
         st.image("images/naf_icon.png", width=90)
+
 
 
 if __name__ == "__main__":
