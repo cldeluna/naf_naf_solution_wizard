@@ -2860,8 +2860,10 @@ def main():
             # Write markdown after potential Gantt generation so template can reference image name
             try:
                 env, tmpl, context = sdd_template_env  # type: ignore
-                # Update gantt_image_path based on actual artifact
-                context["gantt_image_path"] = "Gantt.png" if gantt_png_bytes else None
+                # Update gantt_image_path based on actual artifact (store under images/)
+                context["gantt_image_path"] = (
+                    "images/Gantt.png" if gantt_png_bytes else None
+                )
                 rendered = tmpl.render(**context)
                 sdd_doc_md = rendered.encode("utf-8")
                 # Safety: if render produced empty/whitespace, write a minimal doc
@@ -2880,7 +2882,7 @@ def main():
                     ).encode("utf-8")
             zf.writestr(md_name, sdd_doc_md)
             if gantt_png_bytes:
-                zf.writestr("Gantt.png", gantt_png_bytes)
+                zf.writestr("images/Gantt.png", gantt_png_bytes)
 
             # Include branding icon if available so Markdown image resolves
             try:
@@ -3010,9 +3012,10 @@ def main():
             with zipfile.ZipFile(
                 zip_buf, mode="w", compression=zipfile.ZIP_DEFLATED
             ) as zf:
-                zf.writestr(f"{title_for_zip}_{ts}.json", final_payload_bytes)
+                # Enforce naf_report_ prefix for artifacts
+                zf.writestr(f"naf_report_{title_for_zip}_{ts}.json", final_payload_bytes)
                 zf.writestr(
-                    f"{title_for_zip}_{ts}.md",
+                    f"naf_report_{title_for_zip}_{ts}.md",
                     ("# Solution Design Document\n\n").encode("utf-8"),
                 )
                 # Include branding icon if available in minimal ZIP as well
