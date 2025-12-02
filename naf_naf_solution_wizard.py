@@ -2882,6 +2882,15 @@ def main():
             if gantt_png_bytes:
                 zf.writestr("Gantt.png", gantt_png_bytes)
 
+            # Include branding icon if available so Markdown image resolves
+            try:
+                icon_path = (Path(__file__).parent / "images" / "naf_icon.png").resolve()
+                if icon_path.exists():
+                    with open(icon_path, "rb") as f:
+                        zf.writestr("images/naf_icon.png", f.read())
+            except Exception:
+                pass
+
         zip_bytes = zip_buf.getvalue()
         # Sidebar export (single ZIP download) only when summary has meaningful content
         # and at least one selection array is non-empty (to avoid pure-default narratives)
@@ -3006,6 +3015,14 @@ def main():
                     f"{title_for_zip}_{ts}.md",
                     ("# Solution Design Document\n\n").encode("utf-8"),
                 )
+                # Include branding icon if available in minimal ZIP as well
+                try:
+                    icon_path = (Path(__file__).parent / "images" / "naf_icon.png").resolve()
+                    if icon_path.exists():
+                        with open(icon_path, "rb") as f:
+                            zf.writestr("images/naf_icon.png", f.read())
+                except Exception:
+                    pass
             zip_bytes = zip_buf.getvalue()
             with st.sidebar.expander("Save Solution Artifacts", expanded=True):
                 st.caption("Download your current scenario (JSON + Markdown + Gantt)")

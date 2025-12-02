@@ -26,6 +26,11 @@ Generated: {{ generated_timestamp }}
 _No specific highlights provided._
 {% endif %}
 
+## My Role
+- Who: {{ my_role["who"] or '' }}
+- Skills: {{ my_role["skills"] or '' }}
+- Developer: {{ my_role["developer"] or '' }}
+
 ## Presentation
 {% if presentation["selections"] %}
 - Selected user types: {{ (presentation["selections"]["users"] or [])|join(', ') }}
