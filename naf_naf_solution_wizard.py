@@ -180,11 +180,13 @@ def main():
     with st.sidebar:
         col_logo, col_links = st.columns([1, 2])
         with col_logo:
-            st.image("images/EIA Logo FINAL small_Round.png", width='stretch')
+            st.image("images/EIA Logo FINAL small_Round.png", width="stretch")
         with col_links:
             # External links
             st.markdown("[🏠 EIA Home](https://eianow.com)")
-            st.markdown("[[in] EIA on LinkedIn](https://www.linkedin.com/company/eianow/)")
+            st.markdown(
+                "[[in] EIA on LinkedIn](https://www.linkedin.com/company/eianow/)"
+            )
 
         thick_hr(
             color=hr_color_dict.get("eia_blue", "#92c0e4"),
@@ -813,12 +815,26 @@ def main():
                                     ms = []
                                     for it in items:
                                         try:
-                                            nm = str((it or {}).get("name") or "").strip()
-                                            dur = int((it or {}).get("duration_bd") or 0)
+                                            nm = str(
+                                                (it or {}).get("name") or ""
+                                            ).strip()
+                                            dur = int(
+                                                (it or {}).get("duration_bd") or 0
+                                            )
                                             notes = str((it or {}).get("notes") or "")
                                         except Exception:
-                                            nm, dur, notes = (str((it or {}).get("name") or ""), 0, str((it or {}).get("notes") or ""))
-                                        ms.append({"name": nm, "duration": dur, "notes": notes})
+                                            nm, dur, notes = (
+                                                str((it or {}).get("name") or ""),
+                                                0,
+                                                str((it or {}).get("notes") or ""),
+                                            )
+                                        ms.append(
+                                            {
+                                                "name": nm,
+                                                "duration": dur,
+                                                "notes": notes,
+                                            }
+                                        )
                                     if ms:
                                         st.session_state["timeline_milestones"] = ms
 
@@ -946,11 +962,8 @@ def main():
 
     # Automation Project Title & Short Description (shared with Business Case page)
     with st.expander("Automation Project Title & Description", expanded=True):
-        """
-        Initiative basics that seed both the Wizard and the Business Case page.
+        # Includes title, short description/scope, expected use, out of scope, and detailed description.
 
-        Includes title, short description/scope, expected use, out of scope, and detailed description.
-        """
         st.caption(
             "One-way sync to Business Case when empty or default: Title, Short description, Expected use, Out of scope, and Detailed description."
         )
@@ -1041,11 +1054,9 @@ def main():
 
     # Presentation section
     with st.expander("Presentation", expanded=False):
-        """
-        Presentation layer inputs: users, interactions, tools, and auth.
+        # Presentation layer inputs: users, interactions, tools, and auth.
+        # Drives narrative under payload.presentation and summary rendering.
 
-        Drives narrative under payload.presentation and summary rendering.
-        """
         st.markdown(
             """
         **Presentation Layer Characteristics**
@@ -1208,7 +1219,7 @@ def main():
     # Intent section
     with st.expander("Intent", expanded=False):
         # Intent inputs: what will be developed vs what exists today.
-        # Populates payload.intent and influences highlights and export.
+        # Populates payload.intent and influences highlights and export.q
 
         st.markdown(
             """
@@ -1317,11 +1328,9 @@ def main():
 
     # Observability section
     with st.expander("Observability", expanded=False):
-        """
-        Observability inputs: health signals, go/no-go logic, and tools.
+        # Observability inputs: health signals, go/no-go logic, and tools.
+        # Populates payload.observability with selections and narrative strings.
 
-        Populates payload.observability with selections and narrative strings.
-        """
         st.markdown(
             """
             - Supports historical data persistence with powerful programmatic access for analytics, reporting, and troubleshooting.
@@ -1445,11 +1454,9 @@ def main():
 
     # Orchestration section
     with st.expander("Orchestration", expanded=False):
-        """
-        Orchestration strategy: select No, internal scripts, or describe details.
 
-        Generates an orchestration summary used for preview and export and gates downloads.
-        """
+        # Orchestration strategy: select No, internal scripts, or describe details.
+        # Generates an orchestration summary used for preview and export and gates downloads.
 
         st.markdown(
             """
@@ -1935,11 +1942,9 @@ def main():
 
     # Staffing, Timeline, & Milestones
     with st.expander("Staffing, Timeline, & Milestones", expanded=False):
-        """
-        Planning inputs: staffing counts/plan, start date, and milestone durations.
+        # Planning inputs: staffing counts/plan, start date, and milestone durations.
+        # Drives computed schedule and optional Gantt export.
 
-        Drives computed schedule and optional Gantt export.
-        """
         st.caption(
             "Capture a high-level plan with durations in business days. Start date drives scheduled dates."
         )
@@ -2889,7 +2894,9 @@ def main():
 
             # Include branding icon if available so Markdown image resolves
             try:
-                icon_path = (Path(__file__).parent / "images" / "naf_icon.png").resolve()
+                icon_path = (
+                    Path(__file__).parent / "images" / "naf_icon.png"
+                ).resolve()
                 if icon_path.exists():
                     with open(icon_path, "rb") as f:
                         zf.writestr("images/naf_icon.png", f.read())
@@ -3016,14 +3023,18 @@ def main():
                 zip_buf, mode="w", compression=zipfile.ZIP_DEFLATED
             ) as zf:
                 # Enforce naf_report_ prefix for artifacts
-                zf.writestr(f"naf_report_{title_for_zip}_{ts}.json", final_payload_bytes)
+                zf.writestr(
+                    f"naf_report_{title_for_zip}_{ts}.json", final_payload_bytes
+                )
                 zf.writestr(
                     f"naf_report_{title_for_zip}_{ts}.md",
                     ("# Solution Design Document\n\n").encode("utf-8"),
                 )
                 # Include branding icon if available in minimal ZIP as well
                 try:
-                    icon_path = (Path(__file__).parent / "images" / "naf_icon.png").resolve()
+                    icon_path = (
+                        Path(__file__).parent / "images" / "naf_icon.png"
+                    ).resolve()
                     if icon_path.exists():
                         with open(icon_path, "rb") as f:
                             zf.writestr("images/naf_icon.png", f.read())
@@ -3061,7 +3072,6 @@ def main():
             st.image("images/naf_icon.png", width=90)
         with _naf_link_col:
             st.markdown("[🏠 NAF Home](https://networkautomation.forum/)")
-
 
 
 if __name__ == "__main__":
