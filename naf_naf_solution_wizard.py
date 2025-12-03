@@ -446,20 +446,20 @@ def main():
                                 # Initiative
                                 ini = data.get("initiative", {}) or {}
                                 if ini.get("title") is not None:
-                                    st.session_state["automation_title"] = ini.get(
-                                        "title"
+                                    st.session_state["automation_title"] = str(
+                                        ini.get("title") or ""
                                     )
                                 if ini.get("description") is not None:
-                                    st.session_state["automation_description"] = (
-                                        ini.get("description")
+                                    st.session_state["automation_description"] = str(
+                                        ini.get("description") or ""
                                     )
                                 if ini.get("expected_use") is not None:
-                                    st.session_state["expected_use"] = ini.get(
-                                        "expected_use"
+                                    st.session_state["expected_use"] = str(
+                                        ini.get("expected_use") or ""
                                     )
                                 if ini.get("out_of_scope") is not None:
-                                    st.session_state["out_of_scope"] = ini.get(
-                                        "out_of_scope"
+                                    st.session_state["out_of_scope"] = str(
+                                        ini.get("out_of_scope") or ""
                                     )
                                 if ini.get("no_move_forward") is not None:
                                     st.session_state["no_move_forward"] = ini.get(
@@ -1004,44 +1004,41 @@ def main():
         st.caption(
             "One-way sync to Business Case when empty or default: Title, Short description, Expected use, Out of scope, and Detailed description."
         )
+        # Initialize defaults in session_state if missing to avoid mixing value= with session_state
+        if "automation_title" not in st.session_state:
+            st.session_state["automation_title"] = "My new network automation project"
+        if "automation_description" not in st.session_state:
+            st.session_state["automation_description"] = (
+                "Here is a short description of my my new network automation project"
+            )
+        if "expected_use" not in st.session_state:
+            st.session_state["expected_use"] = (
+                "This automation will be used whenever this task needs to be executed."
+            )
+        if "out_of_scope" not in st.session_state:
+            st.session_state["out_of_scope"] = ""
         col_ib1, col_ib2 = st.columns([2, 3])
         with col_ib1:
-            title_default = st.session_state.get(
-                "automation_title", "My new network automation project"
-            )
             title = st.text_input(
                 "Automation initiative title",
-                value=str(title_default),
                 key="automation_title",
             )
         with col_ib2:
-            desc_default = st.session_state.get(
-                "automation_description",
-                "Here is a short description of my my new network automation project",
-            )
             description = st.text_area(
                 "Short description / scope",
-                value=str(desc_default),
                 height=80,
                 key="automation_description",
             )
 
-        expected_use_default = st.session_state.get(
-            "expected_use",
-            "This automation will be used whenever this task needs to be executed.",
-        )
         expected_use = st.text_area(
             "Expected use (Markdown supported)",
-            value=str(expected_use_default),
             height=80,
             key="expected_use",
             help="Describe the circumstances under which this automation will be used.",
         )
 
-        out_default = st.session_state.get("out_of_scope", "")
         out_of_scope = st.text_area(
             "Out of scope (optional)",
-            value=str(out_default),
             height=80,
             key="out_of_scope",
             help="List areas intentionally excluded from this initiative.",
@@ -2806,7 +2803,7 @@ def main():
             (payload.get("initiative", {}) or {}).get("title", "")
         )
         ts = datetime.datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-        zip_name = f"{title_for_zip}_{ts}.zip"
+        zip_name = f"naf_report_{title_for_zip}_{ts}.zip"
 
         # Ensure initiative exists
         if "initiative" not in final_payload:
@@ -2953,6 +2950,9 @@ def main():
             zf.writestr(md_name, sdd_doc_md)
             if gantt_png_bytes:
                 zf.writestr("images/Gantt.png", gantt_png_bytes)
+            elif gantt_html_bytes:
+                # Provide an HTML fallback if PNG isn't available (no kaleido)
+                zf.writestr("Gantt.html", gantt_html_bytes)
 
             # Include branding icon if available so Markdown image resolves
             try:
@@ -3079,7 +3079,7 @@ def main():
                 re.sub(r"[^A-Za-z0-9_-]+", "_", (_title or "solution")).strip("_")
                 or "solution"
             )
-            zip_name = f"{title_for_zip}_{ts}.zip"
+            zip_name = f"naf_report_{title_for_zip}_{ts}.zip"
             zip_buf = io.BytesIO()
             with zipfile.ZipFile(
                 zip_buf, mode="w", compression=zipfile.ZIP_DEFLATED
