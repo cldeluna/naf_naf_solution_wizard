@@ -19,6 +19,20 @@ Generated: {{ generated_timestamp }}
 {{ initiative["expected_use"] or '' }}
 {% endif -%}
 
+{% set _reasons = initiative["no_move_forward_reasons"] if 'no_move_forward_reasons' in initiative else [] %}
+{% set _no_move = initiative["no_move_forward"] if 'no_move_forward' in initiative else '' %}
+{% if _no_move or (_reasons and _reasons|length > 0) %}
+## If not pursued
+{{ _no_move or '' }}
+{% if _reasons and _reasons|length > 0 %}
+
+### Standard reasons
+{% for r in _reasons %}
+- {{ r }}
+{% endfor %}
+{% endif %}
+{% endif -%}
+
 ## Highlights
 {% if highlights %}
 {{ highlights or '' }}

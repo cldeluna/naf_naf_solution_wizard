@@ -308,6 +308,8 @@ def main():
                     "This automation will be used whenever this task needs to be executed."
                 )
                 st.session_state["out_of_scope"] = ""
+                st.session_state["no_move_forward"] = ""
+                st.session_state["no_move_forward_reasons"] = []
                 # no separate details field; report is generated
                 # Orchestration defaults so select resets visually
                 st.session_state["orch_choice"] = "— Select one —"
@@ -427,6 +429,8 @@ def main():
                                         "automation_description",
                                         "expected_use",
                                         "out_of_scope",
+                                        "no_move_forward",
+                                        "no_move_forward_reasons",
                                         "timeline_milestones",
                                         "timeline_staff_count",
                                         "timeline_staffing_plan",
@@ -457,6 +461,17 @@ def main():
                                     st.session_state["out_of_scope"] = ini.get(
                                         "out_of_scope"
                                     )
+                                if ini.get("no_move_forward") is not None:
+                                    st.session_state["no_move_forward"] = ini.get(
+                                        "no_move_forward"
+                                    )
+                                if ini.get("no_move_forward_reasons") is not None:
+                                    # Only keep known values; if unknown strings are present, include them as-is
+                                    vals = ini.get("no_move_forward_reasons") or []
+                                    if isinstance(vals, list):
+                                        st.session_state["no_move_forward_reasons"] = vals
+                                    else:
+                                        st.session_state["no_move_forward_reasons"] = []
                                 # ignore legacy initiative.solution_details_md in uploads
 
                                 # My Role
@@ -785,12 +800,21 @@ def main():
                                     st.session_state["timeline_staff_count"] = int(
                                         tl.get("staff_count") or 0
                                     )
+                                    st.session_state["_timeline_staff_count"] = int(
+                                        tl.get("staff_count") or 0
+                                    )
                                 if tl.get("staffing_plan_md") is not None:
                                     st.session_state["timeline_staffing_plan"] = tl.get(
                                         "staffing_plan_md"
                                     )
+                                    st.session_state["_timeline_staffing_plan"] = tl.get(
+                                        "staffing_plan_md"
+                                    )
                                 if tl.get("holiday_region") is not None:
                                     st.session_state["timeline_holiday_region"] = (
+                                        tl.get("holiday_region") or "None"
+                                    )
+                                    st.session_state["_timeline_holiday_region"] = (
                                         tl.get("holiday_region") or "None"
                                     )
                                 if tl.get("start_date"):
@@ -808,10 +832,15 @@ def main():
                                             parsed = None
                                     if parsed is not None:
                                         st.session_state["timeline_start_date"] = parsed
+                                        st.session_state["_timeline_start_date_input"] = parsed
 
                                 # Timeline milestones from items
                                 items = tl.get("items") or []
                                 if isinstance(items, list) and items:
+                                    # Clear existing row-level timeline widget keys so widgets adopt new values
+                                    for k in list(st.session_state.keys()):
+                                        if k.startswith(("_tl_name_", "_tl_duration_", "_tl_notes_", "_tl_del_")):
+                                            st.session_state.pop(k, None)
                                     ms = []
                                     for it in items:
                                         try:
@@ -837,6 +866,11 @@ def main():
                                         )
                                     if ms:
                                         st.session_state["timeline_milestones"] = ms
+                                        # Seed row-level widget keys to reflect uploaded values
+                                        for i, r in enumerate(ms):
+                                            st.session_state[f"_tl_name_{i}"] = r.get("name", "")
+                                            st.session_state[f"_tl_duration_{i}"] = int(r.get("duration", 0))
+                                            st.session_state[f"_tl_notes_{i}"] = r.get("notes", "")
 
                                 st.success(
                                     "Applied uploaded JSON to this session. Widgets will reflect values now."
@@ -1013,11 +1047,39 @@ def main():
             help="List areas intentionally excluded from this initiative.",
         )
 
+        no_move_default = st.session_state.get("no_move_forward", "")
+        no_move_forward = st.text_area(
+            "What happens if we don't move forward with this proposal? (optional)",
+            value=str(no_move_default),
+            height=80,
+            key="no_move_forward",
+        )
+
+        # Standard reasons multiselect (optional)
+        standard_reasons = [
+            "We are not improving the way our customers interact with us for service provisioning",
+            "We are not improving the speed and quality of our service provisioning",
+            "We are not meeting feature or service demands from our customers",
+            "We will continue to pay for 3rd party support for this task",
+            "This task will continue to be executed individually in an inconsistend and ad-hoc manner with variying degerees of success and documentation",
+            "This task will continue to take far longer than it should resulting in poor customer satisfaction",
+        ]
+        reasons_default = st.session_state.get("no_move_forward_reasons", []) or []
+        no_move_forward_reasons = st.multiselect(
+            "Standard reasons (optional)",
+            options=standard_reasons,
+            default=[r for r in reasons_default if r in standard_reasons],
+            key="no_move_forward_reasons",
+            help="Select any standard reasons that apply. You can also provide free-form text above.",
+        )
+
         payload["initiative"] = {
             "title": title,
             "description": description,
             "expected_use": expected_use,
             "out_of_scope": out_of_scope,
+            "no_move_forward": no_move_forward,
+            "no_move_forward_reasons": no_move_forward_reasons,
         }
 
     # Collapsible guiding questions
