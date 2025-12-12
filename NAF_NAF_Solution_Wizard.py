@@ -2377,15 +2377,8 @@ def solution_wizard_main():
             )
         else:
             for i, uc in enumerate(use_cases, start=1):
-                name = (uc.get("name") or "").strip() or f"Use Case {i}"
-                desc = (uc.get("description") or "").strip()
-                expected = (uc.get("expected_outcome") or "").strip()
-                st.markdown(f"**Use Case {i}: {name}**")
-                if desc:
-                    st.markdown(f"- Description / Problem Statement: {desc}")
-                if expected:
-                    st.markdown(f"- Expected Outcome: {expected}")
-                st.markdown("---")
+                name = (uc.get("name") or "").strip() or "(Untitled)"
+                st.markdown(f"- Use Case {i}: {name}")
 
     # Local payload compiled above
     # Determine if there is meaningful content across sections (the user has made updates
