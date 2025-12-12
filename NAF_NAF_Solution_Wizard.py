@@ -330,17 +330,17 @@ def solution_wizard_main():
                 st.session_state.pop("my_role_who_other", None)
                 st.session_state.pop("my_role_skills_other", None)
                 st.session_state.pop("my_role_dev_other", None)
-                # Initiative defaults so widgets reset visually
-                st.session_state["automation_title"] = (
+                # Initiative defaults (use _wizard_ keys to persist across pages)
+                st.session_state["_wizard_automation_title"] = (
                     "My new network automation project"
                 )
-                st.session_state["automation_description"] = (
+                st.session_state["_wizard_automation_description"] = (
                     "Here is a short description of my my new network automation project"
                 )
-                st.session_state["expected_use"] = (
+                st.session_state["_wizard_expected_use"] = (
                     "This automation will be used whenever this task needs to be executed."
                 )
-                st.session_state["out_of_scope"] = ""
+                st.session_state["_wizard_out_of_scope"] = ""
                 st.session_state["no_move_forward"] = ""
                 # Let the widget own no_move_forward_reasons; ensure any existing value is cleared
                 st.session_state.pop("no_move_forward_reasons", None)
@@ -477,22 +477,22 @@ def solution_wizard_main():
                                         "orch_details_text",
                                     ]:
                                         st.session_state.pop(k, None)
-                                # Initiative
+                                # Initiative (use _wizard_ keys to persist across pages)
                                 ini = data.get("initiative", {}) or {}
                                 if ini.get("title") is not None:
-                                    st.session_state["automation_title"] = str(
+                                    st.session_state["_wizard_automation_title"] = str(
                                         ini.get("title") or ""
                                     )
                                 if ini.get("description") is not None:
-                                    st.session_state["automation_description"] = str(
+                                    st.session_state["_wizard_automation_description"] = str(
                                         ini.get("description") or ""
                                     )
                                 if ini.get("expected_use") is not None:
-                                    st.session_state["expected_use"] = str(
+                                    st.session_state["_wizard_expected_use"] = str(
                                         ini.get("expected_use") or ""
                                     )
                                 if ini.get("out_of_scope") is not None:
-                                    st.session_state["out_of_scope"] = str(
+                                    st.session_state["_wizard_out_of_scope"] = str(
                                         ini.get("out_of_scope") or ""
                                     )
                                 if ini.get("no_move_forward") is not None:
@@ -1058,45 +1058,55 @@ def solution_wizard_main():
         st.caption(
             "One-way sync to Business Case when empty or default: Title, Short description, Expected use, Out of scope, and Detailed description."
         )
-        # Initialize defaults in session_state if missing to avoid mixing value= with session_state
-        if "automation_title" not in st.session_state:
-            st.session_state["automation_title"] = "My new network automation project"
-        if "automation_description" not in st.session_state:
-            st.session_state["automation_description"] = (
+        # Initialize defaults in _wizard_ data keys (these persist across page navigation)
+        # Widget keys (_widget_*) are separate so Streamlit can manage them without losing data
+        if "_wizard_automation_title" not in st.session_state:
+            st.session_state["_wizard_automation_title"] = "My new network automation project"
+        if "_wizard_automation_description" not in st.session_state:
+            st.session_state["_wizard_automation_description"] = (
                 "Here is a short description of my my new network automation project"
             )
-        if "expected_use" not in st.session_state:
-            st.session_state["expected_use"] = (
+        if "_wizard_expected_use" not in st.session_state:
+            st.session_state["_wizard_expected_use"] = (
                 "This automation will be used whenever this task needs to be executed."
             )
-        if "out_of_scope" not in st.session_state:
-            st.session_state["out_of_scope"] = ""
+        if "_wizard_out_of_scope" not in st.session_state:
+            st.session_state["_wizard_out_of_scope"] = ""
+
         col_ib1, col_ib2 = st.columns([2, 3])
         with col_ib1:
             title = st.text_input(
                 "Automation initiative title",
-                key="automation_title",
+                value=st.session_state.get("_wizard_automation_title", ""),
+                key="_widget_automation_title",
             )
+            st.session_state["_wizard_automation_title"] = title
         with col_ib2:
             description = st.text_area(
                 "Short description / scope",
+                value=st.session_state.get("_wizard_automation_description", ""),
                 height=80,
-                key="automation_description",
+                key="_widget_automation_description",
             )
+            st.session_state["_wizard_automation_description"] = description
 
         expected_use = st.text_area(
             "Expected use (Markdown supported)",
+            value=st.session_state.get("_wizard_expected_use", ""),
             height=80,
-            key="expected_use",
+            key="_widget_expected_use",
             help="Describe the circumstances under which this automation will be used.",
         )
+        st.session_state["_wizard_expected_use"] = expected_use
 
         out_of_scope = st.text_area(
             "Out of scope (optional)",
+            value=st.session_state.get("_wizard_out_of_scope", ""),
             height=80,
-            key="out_of_scope",
+            key="_widget_out_of_scope",
             help="List areas intentionally excluded from this initiative.",
         )
+        st.session_state["_wizard_out_of_scope"] = out_of_scope
 
         no_move_default = st.session_state.get("no_move_forward", "")
         no_move_forward = st.text_area(
@@ -3295,17 +3305,19 @@ def main() -> None:
         """
     )
 
-    st.markdown("### Navigation and state sharing")
+    st.markdown("### Navigation, State, and Downloading/Uploading Your Work")
     st.markdown(
         """
         - Use the **sidebar page selector** to switch between the Use Case and
           Solution Wizard pages (when running as a multipage app with a
           `pages/` directory).
-        - The application keeps shared information in `st.session_state`, so
-          values entered on one page remain available on the others during the
-          same session.
+        - The application keeps shared information so values entered on one page
+          remain available on the others during the same session.
         - You can iterate: refine your use case, update the solution design,
           and re‑generate artifacts as your understanding evolves.
+        - If you saved a previous session, you can load it using the **Load
+          Session** button at the top of the Solution Wizard page (this includes saved 
+          use cases and solution designs).
         """
     )
 
