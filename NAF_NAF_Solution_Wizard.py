@@ -212,10 +212,10 @@ def solution_wizard_main():
     - One-way sync to Business Case: when visiting the Business Case page, these values will populate if its fields are empty or still at defaults.
     - Business Case does not overwrite the Wizard values automatically.
     """
-    # Page config
+    # Page config (use same favicon as landing page for consistency)
     st.set_page_config(
         page_title="Solution Wizard",
-        page_icon="images/EIA_Favicon.png",
+        page_icon="images/naf_icon.png",
         layout="wide",
     )
 
@@ -342,7 +342,8 @@ def solution_wizard_main():
                 )
                 st.session_state["out_of_scope"] = ""
                 st.session_state["no_move_forward"] = ""
-                st.session_state["no_move_forward_reasons"] = []
+                # Let the widget own no_move_forward_reasons; ensure any existing value is cleared
+                st.session_state.pop("no_move_forward_reasons", None)
                 # no separate details field; report is generated
                 # Orchestration defaults so select resets visually
                 st.session_state["orch_choice"] = "— Select one —"
@@ -499,13 +500,30 @@ def solution_wizard_main():
                                         "no_move_forward"
                                     )
                                 if ini.get("no_move_forward_reasons") is not None:
-                                    # Only keep known values; if unknown strings are present, include them as-is
+                                    # Preserve uploaded reasons separately; let the widget own the
+                                    # actual "no_move_forward_reasons" key to avoid Streamlit warnings
                                     vals = ini.get("no_move_forward_reasons") or []
                                     if isinstance(vals, list):
-                                        st.session_state["no_move_forward_reasons"] = vals
+                                        st.session_state[
+                                            "_uploaded_no_move_forward_reasons"
+                                        ] = vals
                                     else:
-                                        st.session_state["no_move_forward_reasons"] = []
+                                        st.session_state[
+                                            "_uploaded_no_move_forward_reasons"
+                                        ] = []
                                 # ignore legacy initiative.solution_details_md in uploads
+
+                                # Use Cases (optional top-level list of dicts)
+                                if "use_cases" in data:
+                                    ucs = data.get("use_cases") or []
+                                    if isinstance(ucs, list):
+                                        # Shallow-copy to avoid accidental shared references
+                                        st.session_state["use_cases"] = [
+                                            dict(uc) if isinstance(uc, dict) else {}
+                                            for uc in ucs
+                                        ]
+                                    else:
+                                        st.session_state["use_cases"] = []
 
                                 # My Role
                                 my_role = data.get("my_role", {}) or {}
@@ -918,17 +936,6 @@ def solution_wizard_main():
     # Build a local payload for this run (no persistence/state-sharing)
     payload = {}
 
-    # Main content area with tabs
-    tab1, tab2 = st.tabs(["Solution Wizard", "UseCase_Wizard"])
-
-    with tab1:
-        # This is where the existing main content will go
-        pass
-
-    with tab2:
-        st.header("UseCase Wizard")
-        st.info("Coming Soon")
-
     # Title with NAF icon
     title_cols = st.columns([0.08, 0.92])
     with title_cols[0]:
@@ -1108,14 +1115,34 @@ def solution_wizard_main():
             "This task will continue to be executed individually in an inconsistend and ad-hoc manner with variying degerees of success and documentation",
             "This task will continue to take far longer than it should resulting in poor customer satisfaction",
         ]
-        reasons_default = st.session_state.get("no_move_forward_reasons", []) or []
-        no_move_forward_reasons = st.multiselect(
-            "Standard reasons (optional)",
-            options=standard_reasons,
-            default=[r for r in reasons_default if r in standard_reasons],
-            key="no_move_forward_reasons",
-            help="Select any standard reasons that apply. You can also provide free-form text above.",
+
+        # Use uploaded defaults only on first creation; afterwards let the widget manage state
+        existing_reasons = st.session_state.get("no_move_forward_reasons", None)
+        uploaded_defaults = st.session_state.pop(
+            "_uploaded_no_move_forward_reasons", None
         )
+
+        if existing_reasons is None:
+            base = (
+                uploaded_defaults
+                if isinstance(uploaded_defaults, list)
+                else []
+            )
+            initial_default = [r for r in base if r in standard_reasons]
+            no_move_forward_reasons = st.multiselect(
+                "Standard reasons (optional)",
+                options=standard_reasons,
+                default=initial_default,
+                key="no_move_forward_reasons",
+                help="Select any standard reasons that apply. You can also provide free-form text above.",
+            )
+        else:
+            no_move_forward_reasons = st.multiselect(
+                "Standard reasons (optional)",
+                options=standard_reasons,
+                key="no_move_forward_reasons",
+                help="Select any standard reasons that apply. You can also provide free-form text above.",
+            )
 
         payload["initiative"] = {
             "title": title,
