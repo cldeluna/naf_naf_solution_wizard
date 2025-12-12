@@ -215,7 +215,7 @@ def solution_wizard_main():
     # Page config (use same favicon as landing page for consistency)
     st.set_page_config(
         page_title="Solution Wizard",
-        page_icon="images/naf_icon.png",
+        page_icon="images/EIA_Favicon.png",
         layout="wide",
     )
 
@@ -3251,7 +3251,7 @@ def main() -> None:
 
     st.set_page_config(
         page_title="NAF‑NAF Wizard App",
-        page_icon="images/naf_icon.png",
+        page_icon="images/EIA_Favicon.png",
         layout="wide",
     )
 

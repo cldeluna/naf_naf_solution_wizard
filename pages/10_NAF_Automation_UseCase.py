@@ -17,6 +17,13 @@ from typing import Any, Dict, List
 import streamlit as st
 from NAF_NAF_Solution_Wizard import render_global_sidebar
 
+# Page config for consistent favicon across all pages
+st.set_page_config(
+    page_title="Automation Use Cases",
+    page_icon="images/EIA_Favicon.png",
+    layout="wide",
+)
+
 
 def _ensure_state() -> None:
     """Ensure the use_cases list and active index exist in session_state."""
