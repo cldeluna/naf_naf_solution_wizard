@@ -3261,10 +3261,10 @@ def main() -> None:
         """
     )
 
-    st.markdown("### 1. Start with the Use Case page to help you think through the automation use cases you are targeting")
+    st.markdown("### 1. Start with the Use Case page to help you think through use cases")
     st.markdown(
         """
-        Use the **Use Case** page to think through and **document the automation use cases**:
+        Use the **Use Case** page to think through and **document the automation use cases** you are targeting:
 
         - What problem are you trying to solve?
         - Who are the primary users and stakeholders?
