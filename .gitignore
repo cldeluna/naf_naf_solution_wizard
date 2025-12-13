@@ -18,3 +18,5 @@ wheels/
 # Custom
 temp
 
+# Supporting Scripts
+use_case_categories_view.py
