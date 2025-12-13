@@ -12,9 +12,12 @@ __copyright__ = "Copyright (c) 2025 Claudia"
 __license__ = "Python"
 
 
+import os
+from pathlib import Path
 from typing import Any, Dict, List
 
 import streamlit as st
+import yaml
 from NAF_NAF_Solution_Wizard import render_global_sidebar
 
 # Page config for consistent favicon across all pages
@@ -122,29 +125,36 @@ def _edit_use_case(idx: int) -> None:
         help="A brief description of what we expect the automation to do.",
     )
 
-    # Category (predefined list with optional custom entry)
-    category_options = [
-        "Configuration management",
-        "Monitoring/Observability",
-        "Incident Response",
-        "Other (describe)",
-    ]
-    current_cat = uc.get("category", "") or category_options[0]
-    if current_cat not in category_options and current_cat:
-        current_cat = "Other (describe)"
+    # Category (load from YAML file)
+    yaml_path = Path(__file__).parent.parent / "use_case_categories.yml"
+    try:
+        with open(yaml_path, "r") as f:
+            categories_data = yaml.safe_load(f)
+        category_options = list(categories_data.keys()) if categories_data else []
+    except Exception:
+        category_options = []
+    # Add placeholder as first option
+    placeholder = "— Select a category —"
+    category_options_with_placeholder = [placeholder] + category_options
+    current_cat = uc.get("category", "") or placeholder
+    if current_cat not in category_options_with_placeholder:
+        current_cat = "Other"
     cat = st.selectbox(
         "Category",
-        options=category_options,
-        index=category_options.index(current_cat)
-        if current_cat in category_options
+        options=category_options_with_placeholder,
+        index=category_options_with_placeholder.index(current_cat)
+        if current_cat in category_options_with_placeholder
         else 0,
         key=f"uc_category_{idx}",
         help=(
-            "Choose a category for this use case. You can add additional "
-            "details below if selecting Other."
+            "Select a category from the list. Choose 'Other' if your use case "
+            "doesn't fit the predefined categories."
         ),
     )
-    if cat == "Other (describe)":
+    if cat == placeholder:
+        st.info("💡 Please select a category from the list above.")
+        uc["category"] = ""
+    elif cat == "Other":
         cat_other = st.text_input(
             "Custom category",
             value=uc.get("category", "")
@@ -301,9 +311,9 @@ def main() -> None:
     # Optional preview of all use cases at the bottom
     with st.expander("Preview all use cases (read-only)", expanded=False):
         for i, uc in enumerate(st.session_state.get("use_cases", [])):
-            st.markdown(f"#### Use Case {i + 1}: {uc.get('title') or '(Untitled)'}")
-            if uc.get("summary"):
-                st.markdown(uc["summary"])
+            st.markdown(f"#### Use Case {i + 1}: {uc.get('name') or '(Untitled)'}")
+            if uc.get("description"):
+                st.markdown(uc["description"])
             st.markdown("---")
 
 
