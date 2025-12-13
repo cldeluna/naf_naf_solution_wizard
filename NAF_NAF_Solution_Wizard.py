@@ -1108,21 +1108,13 @@ def solution_wizard_main():
         )
         st.session_state["_wizard_out_of_scope"] = out_of_scope
 
-        no_move_default = st.session_state.get("no_move_forward", "")
-        no_move_forward = st.text_area(
-            "What happens if we don't move forward with this proposal? (optional)",
-            value=str(no_move_default),
-            height=80,
-            key="no_move_forward",
-        )
-
-        # Standard reasons multiselect (optional)
+        # Standard reasons multiselect (required)
         standard_reasons = [
             "We are not improving the way our customers interact with us for service provisioning",
             "We are not improving the speed and quality of our service provisioning",
             "We are not meeting feature or service demands from our customers",
             "We will continue to pay for 3rd party support for this task",
-            "This task will continue to be executed individually in an inconsistend and ad-hoc manner with variying degerees of success and documentation",
+            "This task will continue to be executed individually in an inconsistent and ad-hoc manner with varying degrees of success and documentation",
             "This task will continue to take far longer than it should resulting in poor customer satisfaction",
         ]
 
@@ -1140,19 +1132,31 @@ def solution_wizard_main():
             )
             initial_default = [r for r in base if r in standard_reasons]
             no_move_forward_reasons = st.multiselect(
-                "Standard reasons (optional)",
+                "Standard reasons",
                 options=standard_reasons,
                 default=initial_default,
                 key="no_move_forward_reasons",
-                help="Select any standard reasons that apply. You can also provide free-form text above.",
+                help="Select at least one standard reason that applies.",
             )
         else:
             no_move_forward_reasons = st.multiselect(
-                "Standard reasons (optional)",
+                "Standard reasons",
                 options=standard_reasons,
                 key="no_move_forward_reasons",
-                help="Select any standard reasons that apply. You can also provide free-form text above.",
+                help="Select at least one standard reason that applies.",
             )
+
+        # Show warning if no standard reasons selected
+        if not no_move_forward_reasons:
+            st.warning("Please select at least one standard reason.")
+
+        no_move_default = st.session_state.get("no_move_forward", "")
+        no_move_forward = st.text_area(
+            "Additional risks in not moving forward (optional)",
+            value=str(no_move_default),
+            height=80,
+            key="no_move_forward",
+        )
 
         payload["initiative"] = {
             "title": title,
@@ -1170,6 +1174,10 @@ def solution_wizard_main():
         """
         st.markdown(
             """
+            - **Presentation**
+              - Provides user interfaces (dashboards/GUI, ITSM, chat, CLI) and access controls for interacting with the system.
+              - Can allow both read and write interactions and integrates with other components as needed.
+                          
             - **Intent**
               - Defines the logic and the persistence layer for the desired state of the network (config and operational expectations).
               - Represents network aspects in structured form, supports CRUD via standard APIs, uses neutral models, and can include validation, aggregation, service decomposition, and artifact generation.
@@ -1182,16 +1190,13 @@ def solution_wizard_main():
               - Coordinates and sequences automation tasks across components in response to events.
               - Can be event‑driven, support dry‑run, scheduling, rollback/compensation, logging/traceability, and correlation.
 
+            - **Collector**
+              - Retrieves the actual state (reads) from the network via APIs/CLIs and telemetry (e.g., SNMP, syslog, flows, streaming telemetry) and can normalize data across vendors.
+
             - **Executor**
               - Performs the network changes (writes) guided by intent.
               - Works with write interfaces (CLI/SSH, NETCONF, gNMI/gNOI, REST), supports transactional/dry‑run flows, and can operate in imperative or declarative styles with idempotency.
 
-            - **Collector**
-              - Retrieves the actual state (reads) from the network via APIs/CLIs and telemetry (e.g., SNMP, syslog, flows, streaming telemetry) and can normalize data across vendors.
-
-            - **Presentation**
-              - Provides user interfaces (dashboards/GUI, ITSM, chat, CLI) and access controls for interacting with the system.
-              - Can allow both read and write interactions and integrates with other components as needed.
             """
         )
 
