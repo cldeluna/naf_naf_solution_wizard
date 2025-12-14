@@ -55,6 +55,146 @@ is_meaningful = utils.is_meaningful
 _join = utils.join_human
 
 
+# --- Module-level helper functions ---
+
+def _sorted_deps(items):
+    """Sort dependency items by name and details for comparison."""
+    return sorted(
+        items, key=lambda x: (x.get("name") or "", x.get("details") or "")
+    )
+
+
+def _has_list_selections(d: dict) -> bool:
+    """Check if a dict contains any non-empty list values."""
+    if not isinstance(d, dict):
+        return False
+    for val in d.values():
+        if isinstance(val, list) and len(val) > 0:
+            return True
+    return False
+
+
+def _norm_role_choice(choice, other, sentinel="— Select one —"):
+    """Normalize a role radio choice, handling 'Other' and sentinel values."""
+    if choice == "Other (fill in)":
+        return (other or "").strip()
+    if choice == sentinel:
+        return ""
+    return choice or ""
+
+
+def _add_business_days(d, n, holiday_set=None):
+    """Add n business days (Mon-Fri) to date d, optionally skipping holidays."""
+    days = int(n or 0)
+    cur = d
+    while days > 0:
+        cur = cur + datetime.timedelta(days=1)
+        if cur.weekday() < 5 and (holiday_set is None or cur not in holiday_set):
+            days -= 1
+    return cur
+
+
+def _section_md(title, lines):
+    """Build a markdown section with title and bullet lines."""
+    lines = [l for l in (lines or []) if (l or "").strip()]
+    if not lines:
+        return ""
+    return f"## {title}\n" + "\n".join(lines) + "\n\n"
+
+
+def _sanitize_title(t: str) -> str:
+    """Sanitize a title string for use in filenames."""
+    t = (t or "").strip()
+    out = []
+    for ch in t:
+        if ch.isalnum() or ch in {"-", "_"}:
+            out.append(ch)
+        else:
+            out.append("_")
+    t = "".join(out)
+    while "__" in t:
+        t = t.replace("__", "_")
+    t = t.strip("_")
+    return (t or "solution")[0:30]
+
+
+def _has_any_content(p: dict) -> bool:
+    """Determine if payload has meaningful content beyond defaults."""
+    try:
+        pres_narr = p.get("presentation", {}) or {}
+        intent_narr = p.get("intent", {}) or {}
+        obs_narr = p.get("observability", {}) or {}
+        orch_narr = p.get("orchestration", {}) or {}
+        coll_narr = p.get("collector", {}) or {}
+        exec_narr = p.get("executor", {}) or {}
+        deps = p.get("dependencies", []) or []
+        tl = p.get("timeline", {}) or {}
+        ini = p.get("initiative", {}) or {}
+        my_role = p.get("my_role", {}) or {}
+
+        pres_flag = any(
+            is_meaningful(pres_narr.get(k))
+            for k in ("users", "interaction", "tools", "auth")
+        )
+        intent_flag = any(
+            is_meaningful(intent_narr.get(k)) for k in ("development", "provided")
+        )
+        obs_flag = any(
+            is_meaningful(obs_narr.get(k))
+            for k in ("methods", "go_no_go", "additional_logic", "tools")
+        )
+        _orch_sel = (
+            (orch_narr.get("selections") or {})
+            if isinstance(orch_narr, dict)
+            else {}
+        )
+        _orch_choice = (_orch_sel.get("choice") or "").strip()
+        orch_flag = bool(
+            _orch_choice and _orch_choice != "— Select one —"
+        ) or is_meaningful(orch_narr.get("summary"))
+        coll_flag = any(
+            is_meaningful(coll_narr.get(k))
+            for k in ("methods", "auth", "handling", "normalization", "scale", "tools")
+        )
+        exec_flag = is_meaningful(exec_narr.get("methods"))
+
+        deps_flag = False
+        if deps:
+            deps_slim = [
+                {"name": (d or {}).get("name"), "details": (d or {}).get("details", "").strip()}
+                for d in deps if (d or {}).get("name")
+            ]
+            default_deps = [
+                {"name": "Network Infrastructure", "details": ""},
+                {"name": "Revision Control system", "details": "GitHub"},
+            ]
+            deps_flag = _sorted_deps(deps_slim) != _sorted_deps(default_deps)
+
+        tl_flag = bool((tl.get("staffing_plan_md") or "").strip())
+
+        default_title = "My new network automation project"
+        default_desc = "Here is a short description of my my new network automation project"
+        title = (ini.get("title") or "").strip()
+        desc = (ini.get("description") or "").strip()
+        ini_flag = bool(
+            (title and title != default_title) or (desc and desc != default_desc)
+        )
+        role_flag = any(
+            ((my_role.get(k) or "").strip()) for k in ("who", "skills", "developer")
+        )
+
+        return any([
+            pres_flag, intent_flag, obs_flag, orch_flag, coll_flag,
+            exec_flag, deps_flag, tl_flag, ini_flag, role_flag,
+        ])
+    except Exception:
+        pass
+    return False
+
+
+# --- End module-level helper functions ---
+
+
 def solution_wizard_main():
     """
     Solution Wizard (NAF Framework) interactive page
@@ -95,23 +235,6 @@ def solution_wizard_main():
 
     # Colors for main content separators
     hr_color_dict = utils.hr_colors()
-
-    # --- Local helper functions (consolidated to avoid duplication) ---
-    def _sorted_deps(items):
-        """Sort dependency items by name and details for comparison."""
-        return sorted(
-            items, key=lambda x: (x.get("name") or "", x.get("details") or "")
-        )
-
-    def _has_list_selections(d: dict) -> bool:
-        """Check if a dict contains any non-empty list values."""
-        if not isinstance(d, dict):
-            return False
-        for val in d.values():
-            if isinstance(val, list) and len(val) > 0:
-                return True
-        return False
-    # --- End local helper functions ---
 
     # JSON upload/reset controls now live in the main page body
     with st.expander("Load Saved Solution Wizard (JSON)", expanded=False):
@@ -991,17 +1114,10 @@ def solution_wizard_main():
         if dev_choice == "Other (fill in)":
             dev_other = st.text_input("Please describe", key="my_role_dev_other")
 
-        def _norm(choice, other):
-            if choice == "Other (fill in)":
-                return (other or "").strip()
-            if choice == SENTINEL_SELECT:
-                return ""
-            return choice or ""
-
         payload["my_role"] = {
-            "who": _norm(role_choice, role_other),
-            "skills": _norm(skill_choice, skill_other),
-            "developer": _norm(dev_choice, dev_other),
+            "who": _norm_role_choice(role_choice, role_other, SENTINEL_SELECT),
+            "skills": _norm_role_choice(skill_choice, skill_other, SENTINEL_SELECT),
+            "developer": _norm_role_choice(dev_choice, dev_other, SENTINEL_SELECT),
         }
 
     # Automation Project Title & Short Description (shared with Business Case page)
@@ -2078,6 +2194,7 @@ def solution_wizard_main():
         st.session_state["timeline_holiday_region"] = holiday_region
 
         def _build_holiday_set(start_year: int, years_ahead: int = 2):
+            # Note: This function must remain nested as it depends on holiday_region closure
             if _hol is None or holiday_region == "None":
                 return set()
             years = list(range(start_year, start_year + max(1, years_ahead) + 1))
@@ -2098,18 +2215,6 @@ def solution_wizard_main():
             except Exception:
                 cal = None
             return set(cal.keys()) if cal else set()
-
-        # Helper: add business days (Mon–Fri), with optional holidays
-        def _add_business_days(d, n, holiday_set=None):
-            days = int(n or 0)
-            cur = d
-            while days > 0:
-                cur = cur + datetime.timedelta(days=1)
-                if cur.weekday() < 5 and (
-                        holiday_set is None or cur not in holiday_set
-                ):  # Mon=0 .. Sun=6
-                    days -= 1
-            return cur
 
         # Start date
         default_start = st.session_state.get("timeline_start_date")
@@ -2315,112 +2420,7 @@ def solution_wizard_main():
                 name = (uc.get("name") or "").strip() or "(Untitled)"
                 st.markdown(f"- Use Case {i}: {name}")
 
-    # Local payload compiled above
-    # Determine if there is meaningful content across sections (the user has made updates
-    def _has_any_content(p: dict) -> bool:
-        try:
-            # Prefer narrative strings, which include 'TBD' for empties and are filtered by is_meaningful
-            pres_narr = p.get("presentation", {}) or {}
-            intent_narr = p.get("intent", {}) or {}
-            obs_narr = p.get("observability", {}) or {}
-            orch_narr = p.get("orchestration", {}) or {}
-            coll_narr = p.get("collector", {}) or {}
-            exec_narr = p.get("executor", {}) or {}
-            deps = p.get("dependencies", []) or []
-            tl = p.get("timeline", {}) or {}
-            ini = p.get("initiative", {}) or {}
-            my_role = p.get("my_role", {}) or {}
-
-            # Narrative-based flags (suppressed when 'TBD' or placeholder text)
-            pres_flag = any(
-                is_meaningful(pres_narr.get(k))
-                for k in ("users", "interaction", "tools", "auth")
-            )
-            intent_flag = any(
-                is_meaningful(intent_narr.get(k)) for k in ("development", "provided")
-            )
-            obs_flag = any(
-                is_meaningful(obs_narr.get(k))
-                for k in ("methods", "go_no_go", "additional_logic", "tools")
-            )
-            _orch_sel = (
-                (orch_narr.get("selections") or {})
-                if isinstance(orch_narr, dict)
-                else {}
-            )
-            _orch_choice = (_orch_sel.get("choice") or "").strip()
-            # Count any non-sentinel choice (including 'No') as content for gating exports
-            orch_flag = bool(
-                _orch_choice and _orch_choice != "— Select one —"
-            ) or is_meaningful(orch_narr.get("summary"))
-            coll_flag = any(
-                is_meaningful(coll_narr.get(k))
-                for k in (
-                    "methods",
-                    "auth",
-                    "handling",
-                    "normalization",
-                    "scale",
-                    "tools",
-                )
-            )
-            exec_flag = is_meaningful(exec_narr.get("methods"))
-
-            # Dependencies: treat default pair as no content
-            deps_flag = False
-            if deps:
-                deps_slim = [
-                    {
-                        "name": (d or {}).get("name"),
-                        "details": (d or {}).get("details", "").strip(),
-                    }
-                    for d in deps
-                    if (d or {}).get("name")
-                ]
-                default_deps = [
-                    {"name": "Network Infrastructure", "details": ""},
-                    {"name": "Revision Control system", "details": "GitHub"},
-                ]
-
-                deps_flag = _sorted_deps(deps_slim) != _sorted_deps(default_deps)
-
-            # Timeline: do NOT trigger content based on default items/dates
-            # Only consider as content if staffing plan markdown has text
-            tl_flag = bool((tl.get("staffing_plan_md") or "").strip())
-
-            # Initiative: ignore known defaults
-            default_title = "My new network automation project"
-            default_desc = (
-                "Here is a short description of my my new network automation project"
-            )
-            title = (ini.get("title") or "").strip()
-            desc = (ini.get("description") or "").strip()
-            ini_flag = bool(
-                (title and title != default_title) or (desc and desc != default_desc)
-            )
-            # My Role: any non-empty answer
-            role_flag = any(
-                ((my_role.get(k) or "").strip()) for k in ("who", "skills", "developer")
-            )
-
-            return any(
-                [
-                    pres_flag,
-                    intent_flag,
-                    obs_flag,
-                    orch_flag,
-                    coll_flag,
-                    exec_flag,
-                    deps_flag,
-                    tl_flag,
-                    ini_flag,
-                    role_flag,
-                ]
-            )
-        except Exception:
-            pass
-        return False
-
+    # Determine if there is meaningful content across sections
     any_content = _has_any_content(payload)
     # Fallback: if the user has selected an orchestration choice (including 'No') via session_state,
     # treat that as meaningful content to enable export even before other narratives populate.
@@ -2494,12 +2494,6 @@ def solution_wizard_main():
     # Markdown summary builder & export — only when there is meaningful content
     if any_content:
         # Build a concise markdown summary from current payload
-        def _section_md(title, lines):
-            lines = [l for l in (lines or []) if (l or "").strip()]
-            if not lines:
-                return ""
-            return f"## {title}\n" + "\n".join(lines) + "\n\n"
-
         summary_parts = []
         # My Role (show if any field present)
         my_role = payload.get("my_role", {}) or {}
@@ -2754,16 +2748,6 @@ def solution_wizard_main():
 
         if "timeline" not in final_payload:
             # Construct a default timeline with computed dates (weekdays only, no holidays)
-
-            def _add_bd(d: date, n: int):
-                cur = d
-                days = int(n or 0)
-                while days > 0:
-                    cur = cur + timedelta(days=1)
-                    if cur.weekday() < 5:
-                        days -= 1
-                return cur
-
             start = datetime.datetime.today().date()
             default_items = [
                 {"name": "Planning", "duration_bd": 5, "notes": ""},
@@ -2779,7 +2763,7 @@ def solution_wizard_main():
             for it in default_items:
                 dur = int(it["duration_bd"])
                 s = cursor
-                e = _add_bd(s, dur) if dur > 0 else s
+                e = _add_business_days(s, dur) if dur > 0 else s
                 schedule.append(
                     {
                         "name": it["name"],
@@ -2817,22 +2801,6 @@ def solution_wizard_main():
             final_payload["naf_report_md"] = summary_md if summary_md else ""
 
         # Build bundled ZIP with JSON, SDD Markdown, and color Gantt chart
-        def _sanitize_title(t: str) -> str:
-            t = (t or "").strip()
-            # Replace any non-alphanumeric with underscore
-            out = []
-            for ch in t:
-                if ch.isalnum() or ch in {"-", "_"}:
-                    out.append(ch)
-                else:
-                    out.append("_")
-            t = "".join(out)
-            # Collapse consecutive underscores and strip
-            while "__" in t:
-                t = t.replace("__", "_")
-            t = t.strip("_")
-            return (t or "solution")[0:30]
-
         title_for_zip = _sanitize_title(
             (payload.get("initiative", {}) or {}).get("title", "")
         )
