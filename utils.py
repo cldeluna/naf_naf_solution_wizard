@@ -102,6 +102,60 @@ def render_global_sidebar() -> None:
 
 
 
+def join_human(items: List[str]) -> str:
+    """
+    Join a list of strings into a human-friendly phrase.
+
+    Examples
+    - ["A"] -> "A"
+    - ["A","B"] -> "A and B"
+    - ["A","B","C"] -> "A, B and C"
+
+    Returns "TBD" when the input is empty or only contains falsey values.
+    """
+    items = [i for i in (items or []) if i]
+    if not items:
+        return "TBD"
+    if len(items) == 1:
+        return items[0]
+    return ", ".join(items[:-1]) + f" and {items[-1]}"
+
+
+def md_line(text: str) -> str:
+    """
+    Convert plain text to a single markdown bullet line.
+
+    Parameters
+    - text (str): Content to prefix with a dash.
+
+    Returns
+    - str: "- <text>" when text is truthy, else an empty string.
+    """
+    return f"- {text}" if text else ""
+
+
+def is_meaningful(text: str) -> bool:
+    """
+    Determine if a narrative string is considered meaningful content.
+
+    Rules
+    - Empty/whitespace -> False
+    - Contains "tbd" (case-insensitive) -> False
+    - Matches any known default placeholder sentence -> False
+    - Otherwise -> True
+    """
+    if not text:
+        return False
+    t = text.strip().lower()
+    if not t or "tbd" in t:
+        return False
+    default_placeholders = {
+        "no additional gating logic beyond the defined go/no-go criteria.",
+        "this solution will not employ a distinct orchestration layer.",
+    }
+    return t not in default_placeholders
+
+
 def main():
     """
     Module self-check entry point (optional).

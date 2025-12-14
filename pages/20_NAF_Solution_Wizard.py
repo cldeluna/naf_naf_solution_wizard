@@ -48,155 +48,11 @@ except Exception:  # pragma: no cover
     _hol = None
 
 
-def hr_colors():
-    """
-    Return the color palette used for horizontal rules and branding accents.
-
-    Returns
-    - dict: Mapping of semantic color names to hex codes used throughout the UI.
-    """
-    hr_color_dict = {
-        "naf_yellow": "#fffe03",
-        "eia_blue": "#92c0e4",
-        "eia_dkblue": "#122e43",
-    }
-    return hr_color_dict
-
-
-def thick_hr(color: str = "red", thickness: int = 3, margin: str = "1rem 0"):
-    """
-    Render a visually thick horizontal rule using raw HTML via Streamlit.
-
-    Parameters
-    - color (str): CSS color value for the rule background.
-    - thickness (int): Pixel height of the bar.
-    - margin (str): CSS margin shorthand applied to the rule container.
-
-    Notes
-    - Uses st.markdown with unsafe_allow_html=True to inject an <hr>-like element.
-    - Prefer this for consistent separators across expanders/sidebars.
-    """
-    st.markdown(
-        f"""
-        <hr style="
-            border: none;
-            height: {thickness}px;
-            background-color: {color};
-            margin: {margin};
-        ">
-        """,
-        unsafe_allow_html=True,
-    )
-
-#
-# def render_global_sidebar() -> None:
-#     """Render global sidebar branding used across all pages.
-#
-#     Includes the EIA logo, external links, and bottom NAF branding bar.
-#     """
-#
-#     hr_color_dict = hr_colors()
-#
-#     with st.sidebar:
-#         # Top branding: logo and EIA links
-#         col_logo, col_links = st.columns([1, 2])
-#         with col_logo:
-#             st.image("images/EIA Logo FINAL small_Round.png", width="stretch")
-#         with col_links:
-#             st.markdown("[🏠 EIA Home](https://eianow.com)")
-#             st.markdown(
-#                 "[[in] EIA on LinkedIn](https://www.linkedin.com/company/eianow/)"
-#             )
-#
-#         thick_hr(
-#             color=hr_color_dict.get("eia_blue", "#92c0e4"),
-#             thickness=6,
-#             margin="0.5rem 0",
-#         )
-#
-#         # Bottom NAF branding bar with NAF icon
-#
-#         _naf_logo_col, _naf_link_col = st.columns([1, 2])
-#         with _naf_logo_col:
-#             st.image("images/naf_icon.png", width="stretch")
-#         with _naf_link_col:
-#             st.markdown("[🏠 NAF Home](https://networkautomation.forum/)")
-#             # linkedin.com/company/network-automation-forum/
-#             st.markdown(
-#                 "[[in] NAF on LinkedIn](https://www.linkedin.com/company/network-automation-forum/)"
-#             )
-#         thick_hr(
-#             color=hr_color_dict.get("naf_yellow", "#fffe03"),
-#             thickness=6,
-#             margin="0.75rem 0 0.25rem 0",
-#         )
-#
-
-def join_human(items: List[str]):
-    """
-    Join a list of strings into a human-friendly phrase.
-
-    Examples
-    - ["A"] -> "A"
-    - ["A","B"] -> "A and B"
-    - ["A","B","C"] -> "A, B and C"
-
-    Returns "TBD" when the input is empty or only contains falsey values.
-    """
-    items = [i for i in (items or []) if i]
-    if not items:
-        return "TBD"
-    if len(items) == 1:
-        return items[0]
-    return ", ".join(items[:-1]) + f" and {items[-1]}"
-
-
-def md_line(text: str) -> str:
-    """
-    Convert plain text to a single markdown bullet line.
-
-    Parameters
-    - text (str): Content to prefix with a dash.
-
-    Returns
-    - str: "- <text>" when text is truthy, else an empty string.
-    """
-    return f"- {text}" if text else ""
-
-
-def is_meaningful(text: str) -> bool:
-    """
-    Determine if a narrative string is considered meaningful content.
-
-    Rules
-    - Empty/whitespace -> False
-    - Contains "tbd" (case-insensitive) -> False
-    - Matches any known default placeholder sentence -> False
-    - Otherwise -> True
-    """
-    if not text:
-        return False
-    t = text.strip().lower()
-    if not t or "tbd" in t:
-        return False
-    default_placeholders = {
-        "no additional gating logic beyond the defined go/no-go criteria.",
-        "this solution will not employ a distinct orchestration layer.",
-    }
-    return t not in default_placeholders
-
-
-def _join(items):
-    """
-    Alias to join_human for brevity where a shorter name reads better.
-
-    Parameters
-    - items (List[str]): Strings to join human-readably.
-
-    Returns
-    - str: Humanized join of items or "TBD" when empty.
-    """
-    return join_human(items)
+# Utility functions moved to utils.py - local aliases for brevity
+join_human = utils.join_human
+md_line = utils.md_line
+is_meaningful = utils.is_meaningful
+_join = utils.join_human
 
 
 def solution_wizard_main():
@@ -238,7 +94,24 @@ def solution_wizard_main():
     utils.render_global_sidebar()
 
     # Colors for main content separators
-    hr_color_dict = hr_colors()
+    hr_color_dict = utils.hr_colors()
+
+    # --- Local helper functions (consolidated to avoid duplication) ---
+    def _sorted_deps(items):
+        """Sort dependency items by name and details for comparison."""
+        return sorted(
+            items, key=lambda x: (x.get("name") or "", x.get("details") or "")
+        )
+
+    def _has_list_selections(d: dict) -> bool:
+        """Check if a dict contains any non-empty list values."""
+        if not isinstance(d, dict):
+            return False
+        for val in d.values():
+            if isinstance(val, list) and len(val) > 0:
+                return True
+        return False
+    # --- End local helper functions ---
 
     # JSON upload/reset controls now live in the main page body
     with st.expander("Load Saved Solution Wizard (JSON)", expanded=False):
@@ -1258,7 +1131,7 @@ def solution_wizard_main():
             """
         )
 
-    thick_hr(color=hr_color_dict["naf_yellow"], thickness=5)
+    utils.thick_hr(color=hr_color_dict["naf_yellow"], thickness=5)
     st.markdown("***Expand each section of the framework to work though the wizard***")
 
     # Presentation section
@@ -1389,7 +1262,7 @@ def solution_wizard_main():
             f"Presentation authentication will use {_join(selected_auth_pres)}."
         )
 
-        thick_hr(color="#6785a0", thickness=3)
+        utils.thick_hr(color="#6785a0", thickness=3)
         st.markdown("**Preview Solution Highlights**")
         any_selected = bool(
             selected_users
@@ -1512,7 +1385,7 @@ def solution_wizard_main():
             f"Intent will be provided via {_join(selected_intent_prov)}."
         )
 
-        thick_hr(color="#6785a0", thickness=3)
+        utils.thick_hr(color="#6785a0", thickness=3)
         st.markdown("**Preview Solution Highlights**")
         any_selected_intent = bool(selected_intent_devs or selected_intent_prov)
         if not any_selected_intent:
@@ -1628,7 +1501,7 @@ def solution_wizard_main():
             f"Observability will be supported by {_join(selected_tools_obs)}."
         )
 
-        thick_hr(color="#6785a0", thickness=3)
+        utils.thick_hr(color="#6785a0", thickness=3)
         st.markdown("**Preview Solution Highlights**")
         lines = []
         if selected_methods:
@@ -1723,7 +1596,7 @@ def solution_wizard_main():
         else:
             orch_sentence = ""
 
-        thick_hr(color="#6785a0", thickness=3)
+        utils.thick_hr(color="#6785a0", thickness=3)
         st.markdown("**Preview Solution Highlights**")
         if orch_choice == ORCH_SENTINEL:
             st.info(
@@ -1919,7 +1792,7 @@ def solution_wizard_main():
         scale_sentence = f"Expected scale: ~{devices or 'TBD'} devices, ~{metrics or 'TBD'} metrics/sec, cadence {cadence or 'TBD'}."
         tools_sentence_coll = f"Collection tools will include {_join(selected_tools)}."
 
-        thick_hr(color="#6785a0", thickness=3)
+        utils.thick_hr(color="#6785a0", thickness=3)
         st.markdown("**Preview Solution Highlights**")
         any_selected_coll = bool(
             selected_methods
@@ -2010,7 +1883,7 @@ def solution_wizard_main():
 
         exec_sentence = f"Execution will be performed using {_join(selected_exec)}."
 
-        thick_hr(color="#6785a0", thickness=3)
+        utils.thick_hr(color="#6785a0", thickness=3)
         st.markdown("**Preview Solution Highlights**")
         any_selected_exec = bool(selected_exec)
         if not any_selected_exec:
@@ -2035,7 +1908,7 @@ def solution_wizard_main():
     payload["use_cases"] = st.session_state.get("use_cases", [])
 
     # Transition to external interfaces and planning
-    thick_hr(color=hr_color_dict["naf_yellow"], thickness=5)
+    utils.thick_hr(color=hr_color_dict["naf_yellow"], thickness=5)
     st.markdown(
         "While the framework helps you think about the technical implementation, for a complete project let's now consider external interfaces, staffing, and timelines."
     )
@@ -2509,13 +2382,7 @@ def solution_wizard_main():
                     {"name": "Revision Control system", "details": "GitHub"},
                 ]
 
-                def _sorted(items):
-                    return sorted(
-                        items,
-                        key=lambda x: (x.get("name") or "", x.get("details") or ""),
-                    )
-
-                deps_flag = _sorted(deps_slim) != _sorted(default_deps)
+                deps_flag = _sorted_deps(deps_slim) != _sorted_deps(default_deps)
 
             # Timeline: do NOT trigger content based on default items/dates
             # Only consider as content if staffing plan markdown has text
@@ -2580,12 +2447,7 @@ def solution_wizard_main():
             {"name": "Revision Control system", "details": "GitHub"},
         ]
 
-        def _sorted(items):
-            return sorted(
-                items, key=lambda x: (x.get("name") or "", x.get("details") or "")
-            )
-
-        looks_default_deps = _sorted(deps_slim) == _sorted(default_deps)
+        looks_default_deps = _sorted_deps(deps_slim) == _sorted_deps(default_deps)
         if not looks_default_deps:
             any_content = True
 
@@ -2599,14 +2461,6 @@ def solution_wizard_main():
             "coll": (payload.get("collector", {}) or {}).get("selections", {}),
             "exec": (payload.get("executor", {}) or {}).get("selections", {}),
         }
-
-        def _has_list_selections(d: dict) -> bool:
-            if not isinstance(d, dict):
-                return False
-            for val in d.values():
-                if isinstance(val, list) and len(val) > 0:
-                    return True
-            return False
 
         has_any_selection = any(_has_list_selections(v) for v in sel.values())
         role_nonempty = any(
@@ -2756,12 +2610,7 @@ def solution_wizard_main():
                 {"name": "Revision Control system", "details": "GitHub"},
             ]
 
-            def _sorted(items):
-                return sorted(
-                    items, key=lambda x: (x.get("name") or "", x.get("details") or "")
-                )
-
-            if _sorted(deps_slim) != _sorted(default_deps):
+            if _sorted_deps(deps_slim) != _sorted_deps(default_deps):
                 for d in deps_slim:
                     name = d.get("name")
                     details = d.get("details")
@@ -3169,14 +3018,6 @@ def solution_wizard_main():
             for k in ("who", "skills", "developer")
         )
 
-        def _has_list_selections(d: dict) -> bool:
-            if not isinstance(d, dict):
-                return False
-            for val in d.values():
-                if isinstance(val, list) and len(val) > 0:
-                    return True
-            return False
-
         has_any_selection = (
                 any(_has_list_selections(v) for v in sel.values()) or role_nonempty
         )
@@ -3223,14 +3064,6 @@ def solution_wizard_main():
             "coll": (payload.get("collector", {}) or {}).get("selections", {}),
             "exec": (payload.get("executor", {}) or {}).get("selections", {}),
         }
-
-        def _has_list_selections(d: dict) -> bool:
-            if not isinstance(d, dict):
-                return False
-            for val in d.values():
-                if isinstance(val, list) and len(val) > 0:
-                    return True
-            return False
 
         has_any_selection = any(_has_list_selections(v) for v in sel.values())
         role_nonempty = any(
