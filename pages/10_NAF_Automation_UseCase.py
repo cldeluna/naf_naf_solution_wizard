@@ -18,7 +18,8 @@ from typing import Any, Dict, List
 
 import streamlit as st
 import yaml
-from NAF_NAF_Solution_Wizard import render_global_sidebar
+# from NAF_NAF_Solution_Wizard import render_global_sidebar
+import utils
 
 # Page config for consistent favicon across all pages
 st.set_page_config(
@@ -295,7 +296,7 @@ def main() -> None:
     """
 
     # Shared sidebar branding
-    render_global_sidebar()
+    utils.render_global_sidebar()
 
     st.title("Automation Use Cases")
     st.caption(
