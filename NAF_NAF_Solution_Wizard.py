@@ -1116,6 +1116,7 @@ def solution_wizard_main():
             "We will continue to pay for 3rd party support for this task",
             "This task will continue to be executed individually in an inconsistent and ad-hoc manner with varying degrees of success and documentation",
             "This task will continue to take far longer than it should resulting in poor customer satisfaction",
+            "We risk continuing to add technical debt to the logical infrastructure"
         ]
 
         # Initialize default if not set (widget key is set directly during JSON upload)
@@ -1133,10 +1134,12 @@ def solution_wizard_main():
         if not no_move_forward_reasons:
             st.warning("Please select at least one standard reason.")
 
-        no_move_default = st.session_state.get("no_move_forward", "")
+        # Initialize default if not set
+        if "no_move_forward" not in st.session_state:
+            st.session_state["no_move_forward"] = ""
+
         no_move_forward = st.text_area(
             "Additional risks in not moving forward (optional)",
-            value=str(no_move_default),
             height=80,
             key="no_move_forward",
         )
@@ -2936,7 +2939,9 @@ def solution_wizard_main():
             _hl = (summary_md or "").strip()
             try:
                 for heading in (
+                    "My Role",
                     "Initiative",
+                    "Automation Use Cases",
                     "Presentation",
                     "Intent",
                     "Observability",

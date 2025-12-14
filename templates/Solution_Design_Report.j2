@@ -7,6 +7,7 @@ Generated: {{ generated_timestamp }}
 
 ## Overview of Automation Initiative
 # {{ initiative["title"] or '' }}
+---
 
 ## Scope
 {{ initiative["description"] or '' }}
@@ -20,25 +21,20 @@ Generated: {{ generated_timestamp }}
 {% endif -%}
 
 {% set _reasons = initiative["no_move_forward_reasons"] if 'no_move_forward_reasons' in initiative else [] %}
-{% set _no_move = initiative["no_move_forward"] if 'no_move_forward' in initiative else '' %}
+{% set _no_move = (initiative["no_move_forward"] if 'no_move_forward' in initiative else '')|trim %}
 {% if _no_move or (_reasons and _reasons|length > 0) %}
 ## If not pursued
-{{ _no_move or '' }}
-{% if _reasons and _reasons|length > 0 %}
-
-### Standard reasons
+{% if _reasons and _reasons|length > 0 -%}
 {% for r in _reasons %}
 - {{ r }}
-{% endfor %}
+{% endfor -%}
+{% endif %}
+{% if _no_move %}
+
+### Additional risks in not moving forward
+{{ _no_move }}
 {% endif %}
 {% endif -%}
-
-## Highlights
-{% if highlights %}
-{{ highlights or '' }}
-{% else %}
-_No specific highlights provided._
-{% endif %}
 
 ## My Role
 - Who: {{ my_role["who"] or '' }}
@@ -46,13 +42,16 @@ _No specific highlights provided._
 - Developer: {{ my_role["developer"] or '' }}
 
 ## Automation Use Cases Summary
-{% if use_cases and use_cases|length > 0 %}
+{% if use_cases and use_cases|length > 0 -%}
 {% for uc in use_cases %}
 - Use Case {{ loop.index }}: {{ uc["name"] or '(Untitled)' }}
-{% endfor %}
+{% endfor -%}
 {% else %}
 _No automation use cases defined._
 {% endif %}
+
+---
+# Framework Elements
 
 ## Presentation
 {% if presentation["selections"] %}
@@ -140,21 +139,23 @@ _No automation use cases defined._
 {% endif %}
 
 # Dependencies & External Interfaces
-{% if dependencies and dependencies|length > 0 %}
+---
+{% if dependencies and dependencies|length > 0 -%}
 {% for dep in dependencies %}
 - {{ dep["name"] }}{% if dep["details"] %}: {{ dep["details"] }}{% endif %}
-{% endfor %}
+{% endfor -%}
 {% else %}
 - None defined.
 {% endif %}
 
 # Staffing, Timeline, & Milestones
+---
 - Staff {{ timeline["staff_count"] or '' }} • Start {{ timeline["start_date"] or '' }} • Total {{ timeline["total_business_days"] or '' }} bd • Completion {{ timeline["projected_completion"] or '' }}
 
-{% if timeline["items"] and timeline["items"]|length > 0 %}
+{% if timeline["items"] and timeline["items"]|length > 0 -%}
 {% for item in timeline["items"] %}
 - {{ item["name"] }}: {{ item["start"] }} → {{ item["end"] }} ({{ item["duration_bd"] }} bd){% if item["notes"] %} — {{ item["notes"] }}{% endif %}
-{% endfor %}
+{% endfor -%}
 {% else %}
 _No detailed milestones defined._
 {% endif %}
@@ -178,45 +179,45 @@ _No detailed staffing plan provided._
 ---
 
 # Automation Use Cases Detail
-{% if use_cases and use_cases|length > 0 %}
+---
+{% if use_cases and use_cases|length > 0 -%}
 {% for uc in use_cases %}
 ## Use Case {{ loop.index }}: {{ uc["name"] or '(Untitled use case)' }}
-
-{% if uc["description"] %}
+{% if uc["description"] -%}
 - **Description / Problem Statement:** {{ uc["description"] }}
-{% endif %}
-{% if uc["expected_outcome"] %}
+{% endif -%}
+{% if uc["expected_outcome"] -%}
 - **Expected Outcome:** {{ uc["expected_outcome"] }}
-{% endif %}
-{% if uc["category"] %}
+{% endif -%}
+{% if uc["category"] -%}
 - **Category:** {{ uc["category"] }}
-{% endif %}
-{% if uc["assumptions"] %}
+{% endif -%}
+{% if uc["assumptions"] -%}
 - **Assumptions:** {{ uc["assumptions"] }}
-{% endif %}
-{% if uc["trigger"] %}
+{% endif -%}
+{% if uc["trigger"] -%}
 - **Trigger:** {{ uc["trigger"] }}
-{% endif %}
-{% if uc["building_blocks"] %}
+{% endif -%}
+{% if uc["building_blocks"] -%}
 - **Building Blocks:** {{ uc["building_blocks"] }}
-{% endif %}
-{% if uc["setup_task"] %}
+{% endif -%}
+{% if uc["setup_task"] -%}
 - **Setup Task:** {{ uc["setup_task"] }}
-{% endif %}
-{% if uc["tasks"] %}
+{% endif -%}
+{% if uc["tasks"] -%}
 - **Task(s):** {{ uc["tasks"] }}
-{% endif %}
-{% if uc["deployment_strategy"] %}
+{% endif -%}
+{% if uc["deployment_strategy"] -%}
 - **Deployment Strategy:** {{ uc["deployment_strategy"] }}
-{% endif %}
-{% if uc["error_conditions"] %}
+{% endif -%}
+{% if uc["error_conditions"] -%}
 - **Error Conditions:** {{ uc["error_conditions"] }}
-{% endif %}
-
+{% endif -%}
 {% if not loop.last %}
+
 ---
 {% endif %}
-{% endfor %}
+{% endfor -%}
 {% else %}
 _No automation use cases were defined._
 {% endif %}
