@@ -1,0 +1,198 @@
+{
+  "my_role": {
+    "who": "I\u2019m a network engineer.",
+    "skills": "I have some scripting skills and basic software development experience.",
+    "developer": "My in-house team and I will build it."
+  },
+  "initiative": {
+    "title": "Automated Configuration Updates",
+    "description": "This automation initiative will automate simple updates to \n- vlans\n- ACLs\n- SNMP v2 Community Strings\n- BGP Peers",
+    "expected_use": "This automation will be used whenever this task needs to be executed. See Use Cases for more details.",
+    "out_of_scope": "Firewall Policy and Extended ACLs",
+    "no_move_forward": "We run the risk of continuing to add technical debt to the logical infrastructure",
+    "no_move_forward_reasons": [
+      "We are not improving the speed and quality of our service provisioning",
+      "This task will continue to be executed individually in an inconsistend and ad-hoc manner with variying degerees of success and documentation"
+    ]
+  },
+  "presentation": {
+    "users": "This solution targets Network Engineers, Operations, Help Desk and Authorized Users.",
+    "interaction": "Users will interact with the solution via TBD.",
+    "tools": "The presentation layer will be built using Python and Python Web Framework (Streamlit, Flask, etc.).",
+    "auth": "Presentation authentication will use Built-in (to the automation) Authentication via Username/Password or TOKEN.",
+    "selections": {
+      "users": [
+        "Network Engineers",
+        "Operations",
+        "Help Desk",
+        "Authorized Users"
+      ],
+      "interactions": [],
+      "tools": [
+        "Python",
+        "Python Web Framework (Streamlit, Flask, etc.)"
+      ],
+      "auth": [
+        "Built-in (to the automation) Authentication via Username/Password or TOKEN"
+      ]
+    }
+  },
+  "intent": {
+    "development": "Intent will be developed using Templates.",
+    "provided": "Intent will be provided via Text file.",
+    "selections": {
+      "development": [
+        "Templates"
+      ],
+      "provided": [
+        "Text file"
+      ]
+    }
+  },
+  "observability": {
+    "methods": "Network state will be determined via Purpose-built Python Script.",
+    "go_no_go": "Go/No-Go criteria: can log in to network device.",
+    "additional_logic": "No additional gating logic beyond the defined go/no-go criteria.",
+    "tools": "Observability will be supported by Custom Python Scripts and Network Vendor Product (Cisco Catalyst Center, Arista CVP, etc.).",
+    "selections": {
+      "methods": [
+        "Purpose-built Python Script"
+      ],
+      "go_no_go_text": "can log in to network device",
+      "additional_logic_enabled": false,
+      "additional_logic_text": "",
+      "tools": [
+        "Custom Python Scripts",
+        "Network Vendor Product (Cisco Catalyst Center, Arista CVP, etc.)"
+      ]
+    }
+  },
+  "orchestration": {
+    "summary": "No Orchestration will be used in this project.",
+    "selections": {
+      "choice": "No",
+      "details": ""
+    }
+  },
+  "collector": {
+    "methods": "Collection will use CLI/SSH.",
+    "auth": "Authentication will leverage Username/Password.",
+    "handling": "Traffic handling will include None.",
+    "normalization": "Collected data will be normalized via None.",
+    "scale": "Expected scale: ~7500 devices, ~32 metrics/sec, cadence on-demand.",
+    "tools": "Collection tools will include TBD.",
+    "selections": {
+      "methods": [
+        "CLI/SSH"
+      ],
+      "auth": [
+        "Username/Password"
+      ],
+      "handling": [
+        "None"
+      ],
+      "normalization": [
+        "None"
+      ],
+      "devices": "7500",
+      "metrics_per_sec": "32",
+      "cadence": "on-demand",
+      "tools": []
+    }
+  },
+  "executor": {
+    "methods": "Execution will be performed using Automating CLI interaction with Python automation frameworks (Netmiko, Napalm, Nornir, PyATS).",
+    "selections": {
+      "methods": [
+        "Automating CLI interaction with Python automation frameworks (Netmiko, Napalm, Nornir, PyATS)"
+      ]
+    }
+  },
+  "use_cases": [
+    {
+      "name": "Configuration updates",
+      "description": "Updating devices manually is time consuming and error prone.\nThis use case is to update a configuration on one or more network devices \n",
+      "expected_outcome": "Expected automation outcome",
+      "category": "Configuration management",
+      "assumptions": "",
+      "trigger": "Planned event (feature add)",
+      "building_blocks": "See Solution Wizard\n",
+      "setup_task": "Create a new config file/template ",
+      "tasks": "Add/delete/change VLAN\nAdd/delete/change ACL\nAdd/delete/change SNMP community\nAdd/delete/change a BGP peer\n",
+      "deployment_strategy": "Canary",
+      "error_conditions": "Unable to update configuration. Rollback to original state",
+      "standard_deployment_strategy": ""
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "Network Infrastructure",
+      "details": ""
+    },
+    {
+      "name": "Revision Control system",
+      "details": "GitHub"
+    },
+    {
+      "name": "ITSM/Change Management System",
+      "details": "Service Now"
+    },
+    {
+      "name": "Authentication System",
+      "details": "TACACS"
+    }
+  ],
+  "timeline": {
+    "start_date": "2025-12-12",
+    "total_business_days": 75,
+    "projected_completion": "2026-03-27",
+    "staff_count": 1,
+    "staffing_plan_md": "I will develop this to full POC. If POC is successful, we will engage professional services to operationalize.",
+    "holiday_region": "None",
+    "items": [
+      {
+        "name": "Planning",
+        "duration_bd": 5,
+        "start": "2025-12-12",
+        "end": "2025-12-19",
+        "notes": ""
+      },
+      {
+        "name": "Design",
+        "duration_bd": 10,
+        "start": "2025-12-19",
+        "end": "2026-01-02",
+        "notes": ""
+      },
+      {
+        "name": "Build",
+        "duration_bd": 15,
+        "start": "2026-01-02",
+        "end": "2026-01-23",
+        "notes": ""
+      },
+      {
+        "name": "Test",
+        "duration_bd": 10,
+        "start": "2026-01-23",
+        "end": "2026-02-06",
+        "notes": ""
+      },
+      {
+        "name": "Pilot",
+        "duration_bd": 5,
+        "start": "2026-02-06",
+        "end": "2026-02-13",
+        "notes": ""
+      },
+      {
+        "name": "Production Rollout",
+        "duration_bd": 30,
+        "start": "2026-02-13",
+        "end": "2026-03-27",
+        "notes": ""
+      }
+    ]
+  },
+  "naf_report_md": "## My Role\n- Who: I\u2019m a network engineer.\n- Skills: I have some scripting skills and basic software development experience.\n- Developer: My in-house team and I will build it.\n\n## Initiative\n- Title: Automated Configuration Updates\n- Scope: This automation initiative will automate simple updates to \n- vlans\n- ACLs\n- SNMP v2 Community Strings\n- BGP Peers\n- Out of scope: Firewall Policy and Extended ACLs\n\n## Automation Use Cases\n- Use Case 1: Configuration updates\n\n## Presentation\n- This solution targets Network Engineers, Operations, Help Desk and Authorized Users.\n- The presentation layer will be built using Python and Python Web Framework (Streamlit, Flask, etc.).\n- Presentation authentication will use Built-in (to the automation) Authentication via Username/Password or TOKEN.\n\n## Intent\n- Intent will be developed using Templates.\n- Intent will be provided via Text file.\n\n## Observability\n- Network state will be determined via Purpose-built Python Script.\n- Go/No-Go criteria: can log in to network device.\n- Observability will be supported by Custom Python Scripts and Network Vendor Product (Cisco Catalyst Center, Arista CVP, etc.).\n\n## Orchestration\n- No Orchestration will be used in this project.\n\n## Collector\n- Collection will use CLI/SSH.\n- Authentication will leverage Username/Password.\n- Traffic handling will include None.\n- Collected data will be normalized via None.\n- Expected scale: ~7500 devices, ~32 metrics/sec, cadence on-demand.\n\n## Executor\n- Execution will be performed using Automating CLI interaction with Python automation frameworks (Netmiko, Napalm, Nornir, PyATS).\n\n## Dependencies & External Interfaces\n- Network Infrastructure\n- Revision Control system: GitHub\n- ITSM/Change Management System: Service Now\n- Authentication System: TACACS\n\n## Staffing, Timeline, & Milestones\n- Staff 1 \u2022 Start 2025-12-12 \u2022 Total 75 bd \u2022 Completion 2026-03-27\n  - Planning: 2025-12-12 \u2192 2025-12-19 (5 bd)\n  - Design: 2025-12-19 \u2192 2026-01-02 (10 bd)\n  - Build: 2026-01-02 \u2192 2026-01-23 (15 bd)\n  - Test: 2026-01-23 \u2192 2026-02-06 (10 bd)\n  - Pilot: 2026-02-06 \u2192 2026-02-13 (5 bd)\n  - Production Rollout: 2026-02-13 \u2192 2026-03-27 (30 bd)\n\n\n## Staffing Plan\nI will develop this to full POC. If POC is successful, we will engage professional services to operationalize."
+}
