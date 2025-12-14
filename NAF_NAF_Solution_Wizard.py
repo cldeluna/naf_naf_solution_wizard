@@ -658,9 +658,9 @@ def solution_wizard_main():
                                 for m in obs_sel.get("methods", []) or []:
                                     st.session_state[f"obs_state_{m}"] = True
                                 known_obs_tools = {
-                                    "SuzieQ Open Source",
-                                    "SuzieQ Enterprise",
-                                    "Network Vendor Product (Cisco Catalyst Center, Arista CVP, etc.)",
+                                    "Open Source",
+                                    "Commercial/Enterprise Product",
+                                    "Network Vendor Product (Cisco Catalyst Center, Arista CVP, PAN Panorama,etc.)",
                                     "Custom Python Scripts",
                                 }
                                 for t in obs_sel.get("tools", []) or []:
@@ -778,12 +778,10 @@ def solution_wizard_main():
                                 for t in col_sel.get("tools", []) or []:
                                     for known in [
                                         "None",
-                                        "SuzieQ",
-                                        "Cisco Catalyst Center",
-                                        "Cisco Nexus Dashboard",
-                                        "Cisco ACI APIC",
-                                        "Arista CVP",
-                                        "Prometheus",
+                                        "Open Source",
+                                        "Commercial/Enterprise Product",
+                                        "Network Vendor Product (Cisco Catalyst Center, Arista CVP, PAN Panorama, etc.)",
+                                        "Custom Python Scripts",
                                     ]:
                                         if t == known:
                                             st.session_state[
@@ -1228,7 +1226,7 @@ def solution_wizard_main():
 
         st.subheader("How will your users interact with your solution?")
         cols2 = st.columns(3)
-        interact_opts = ["CLI", "Web GUI", "Other GUI", "API"]
+        interact_opts = ["CLI", "Purpose-built Web GUI", "Other GUI", "API", "Commercial Product/GUI", "Open Source Product/GUI"]
         interact_checks = {}
         for i, opt in enumerate(interact_opts):
             with cols2[i % 3]:
@@ -1513,8 +1511,8 @@ def solution_wizard_main():
         st.subheader("What tools will be used to support the observability layer?")
         cols_tools = st.columns(3)
         obs_tools_opts = [
-            "SuzieQ Open Source",
-            "SuzieQ Enterprise",
+            "Open Source Software",
+            "Commercial/Enterprise Product",
             "Network Vendor Product (Cisco Catalyst Center, Arista CVP, etc.)",
             "Custom Python Scripts",
         ]
@@ -1784,12 +1782,9 @@ def solution_wizard_main():
         cols_ct = st.columns(3)
         tool_opts = [
             "None",
-            "SuzieQ",
-            "Cisco Catalyst Center",
-            "Cisco Nexus Dashboard",
-            "Cisco ACI APIC",
-            "Arista CVP",
-            "Prometheus",
+            "Open Source Software",
+            "Commercial/Enterprise Product",
+            "In-house Software",
         ]
         tool_checks = {}
         for i, opt in enumerate(tool_opts):
@@ -1917,9 +1912,10 @@ def solution_wizard_main():
         cols_exec = st.columns(2)
         exec_opts = [
             "Automating CLI interaction with Python automation frameworks (Netmiko, Napalm, Nornir, PyATS)",
-            "Automating execution with a tool like Ansible",
-            "Custom Python scripts",
-            "Via manufacturer management application (Cisco DNA Center, Arista CVP)",
+            "Using Open Source Software (Ansible, Terraform, etc.)",
+            "Using Custom Python scripts",
+            "Using Network Vendor Product (Cisco DNA Center, Arista CVP)",
+            "Using a Commercial/Enterprise Product",
         ]
         exec_checks = {}
         for i, opt in enumerate(exec_opts):
