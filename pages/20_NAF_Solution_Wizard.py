@@ -222,6 +222,149 @@ def solution_wizard_main():
     - Fields: Title, Short description/scope, Expected use, Out of scope, Detailed description (Markdown)
     - One-way sync to Business Case: when visiting the Business Case page, these values will populate if its fields are empty or still at defaults.
     - Business Case does not overwrite the Wizard values automatically.
+
+    ==================================================================================
+    STATE PERSISTENCE ACROSS PAGES
+    ==================================================================================
+    Streamlit clears widget keys from st.session_state when the widget is not rendered
+    (i.e., when navigating away from a page). To preserve user input across page
+    navigation between the Use Case page (10_NAF_Automation_UseCase.py) and this
+    Solution Wizard page, we use a "backing key" pattern:
+
+    1. BACKING KEYS:
+       - "_wizard_data": dict storing scalar field values (text inputs, text areas, etc.)
+       - "_wizard_checkboxes": dict storing checkbox/toggle states with prefixed keys
+
+    2. SAVE MECHANISM (on JSON upload or state change):
+       - All relevant widget values are copied into the backing dicts
+       - Checkbox keys are identified by prefix patterns and stored in _wizard_checkboxes
+
+    3. RESTORE MECHANISM (on page load):
+       - If "_wizard_data" exists, iterate and restore keys not already in session_state
+       - If "_wizard_checkboxes" exists, restore checkbox states similarly
+       - This runs before widgets render, so widgets pick up the restored values
+
+    4. SHARED STATE WITH USE CASE PAGE:
+       - "use_cases" key in st.session_state is shared between pages
+       - Use cases defined on page 10 appear in the wizard's "Automation Use Cases" expander
+       - JSON export includes use_cases from session_state
+
+    ==================================================================================
+    GUI FIELD TO VARIABLE MAPPING
+    ==================================================================================
+    Below is a mapping of GUI field labels to their session_state keys and types.
+
+    MY ROLE SECTION:
+    ---------------------------------------------------------------------------------
+    GUI Label                                    | st.session_state Key     | Type
+    ---------------------------------------------------------------------------------
+    Who's filling out this wizard?               | my_role_who              | str (radio, single)
+    What best describes your technical skills?   | my_role_skills           | str (radio, single)
+    Who will actually develop the automation?    | my_role_dev              | str (radio, single)
+
+    INITIATIVE/PROJECT SECTION:
+    ---------------------------------------------------------------------------------
+    GUI Label                                    | st.session_state Key             | Type
+    ---------------------------------------------------------------------------------
+    Automation initiative title                  | _wizard_automation_title         | str (text_input)
+    Short description / scope                    | _wizard_automation_description   | str (text_area)
+    Expected use (Markdown supported)            | _wizard_expected_use             | str (text_area)
+    Out of scope (optional)                      | _wizard_out_of_scope             | str (text_area)
+    Standard reasons                             | no_move_forward_reasons          | list[str] (multiselect, multi)
+    Additional risks in not moving forward       | no_move_forward                  | str (text_area)
+
+    PRESENTATION SECTION:
+    ---------------------------------------------------------------------------------
+    GUI Label                                    | st.session_state Key Pattern     | Type
+    ---------------------------------------------------------------------------------
+    Intended users checkboxes                    | pres_user_{option}               | bool (checkbox, multi)
+    Custom users enable                          | pres_user_custom_enable          | bool (checkbox)
+    Custom users text                            | pres_user_custom                 | str (text_input)
+    Interaction method checkboxes                | pres_interact_{option}           | bool (checkbox, multi)
+    Custom interaction enable                    | pres_interact_custom_enable      | bool (checkbox)
+    Tools checkboxes                             | pres_tool_{option}               | bool (checkbox, multi)
+    Custom tool enable                           | pres_tool_custom_enable          | bool (checkbox)
+    Authentication checkboxes                    | pres_auth_{option}               | bool (checkbox, multi)
+    Other auth enable                            | pres_auth_other_enable           | bool (checkbox)
+    Other auth details                           | pres_auth_other_text             | str (text_input)
+
+    INTENT SECTION:
+    ---------------------------------------------------------------------------------
+    GUI Label                                    | st.session_state Key Pattern     | Type
+    ---------------------------------------------------------------------------------
+    Intent development checkboxes                | intent_dev_{option}              | bool (checkbox, multi)
+    Custom intent enable                         | intent_dev_custom_enable         | bool (checkbox)
+    Intent provision checkboxes                  | intent_prov_{option}             | bool (checkbox, multi)
+    Custom provision enable                      | intent_prov_custom_enable        | bool (checkbox)
+
+    OBSERVABILITY SECTION:
+    ---------------------------------------------------------------------------------
+    GUI Label                                    | st.session_state Key Pattern     | Type
+    ---------------------------------------------------------------------------------
+    State representation checkboxes              | obs_state_{option}               | bool (checkbox, multi)
+    Observability tools checkboxes               | obs_tool_{option}                | bool (checkbox, multi)
+    Other tool enable                            | obs_tool_other_enable            | bool (checkbox)
+    Other tool text                              | obs_tool_other_text              | str (text_input)
+    Go/No-Go criteria                            | obs_go_no_go                     | str (text_area)
+    Additional gating logic choice               | obs_add_logic_choice             | str (radio, single)
+    Additional gating logic text                 | obs_add_logic_text               | str (text_area)
+
+    ORCHESTRATION SECTION:
+    ---------------------------------------------------------------------------------
+    GUI Label                                    | st.session_state Key             | Type
+    ---------------------------------------------------------------------------------
+    Orchestration choice                         | orch_choice                      | str (radio, single)
+    Orchestration details                        | orch_details_text                | str (text_area)
+
+    COLLECTOR SECTION:
+    ---------------------------------------------------------------------------------
+    GUI Label                                    | st.session_state Key Pattern     | Type
+    ---------------------------------------------------------------------------------
+    Collection method checkboxes                 | collector_method_{option}        | bool (checkbox, multi)
+    Custom method enable                         | collector_methods_other_enable   | bool (checkbox)
+    Authentication checkboxes                    | collector_auth_{option}          | bool (checkbox, multi)
+    Custom auth enable                           | collector_auth_other_enable      | bool (checkbox)
+    Data handling checkboxes                     | collector_handle_{option}        | bool (checkbox, multi)
+    Custom handling enable                       | collector_handling_other_enable  | bool (checkbox)
+    Normalization checkboxes                     | collector_norm_{option}          | bool (checkbox, multi)
+    Custom normalization enable                  | collector_norm_other_enable      | bool (checkbox)
+    Collection tools checkboxes                  | collection_tools_{option}        | bool (checkbox, multi)
+    Custom tools enable                          | collection_tools_other_enable    | bool (checkbox)
+    Devices/scope                                | collector_devices                | str (text_area)
+    Metrics/data                                 | collector_metrics                | str (text_area)
+    Cadence                                      | collector_cadence                | str (text_input)
+
+    EXECUTOR SECTION:
+    ---------------------------------------------------------------------------------
+    GUI Label                                    | st.session_state Key Pattern     | Type
+    ---------------------------------------------------------------------------------
+    Execution method checkboxes                  | exec_{index}                     | bool (checkbox, multi)
+
+    DEPENDENCIES SECTION:
+    ---------------------------------------------------------------------------------
+    GUI Label                                    | st.session_state Key Pattern     | Type
+    ---------------------------------------------------------------------------------
+    Dependency checkboxes                        | dep_{key}                        | bool (checkbox, multi)
+    Dependency details                           | dep_{key}_details                | str (text_input)
+
+    TIMELINE SECTION:
+    ---------------------------------------------------------------------------------
+    GUI Label                                    | st.session_state Key             | Type
+    ---------------------------------------------------------------------------------
+    Direct staff on project                      | timeline_staff_count             | int (number_input)
+    Staffing plan (markdown)                     | timeline_staffing_plan           | str (text_area)
+    Holiday calendar                             | timeline_holiday_region          | str (selectbox, single)
+    Project start date                           | timeline_start_date              | date (date_input)
+    Milestone rows                               | timeline_milestones              | list[dict] (dynamic)
+    Milestone name (row N)                       | _tl_name_{N}                     | str (text_input)
+    Milestone duration (row N)                   | _tl_duration_{N}                 | int (number_input)
+    Milestone notes (row N)                      | _tl_notes_{N}                    | str (text_input)
+
+    SHARED KEYS (with Use Case page):
+    ---------------------------------------------------------------------------------
+    Key                                          | Type                             | Description
+    ---------------------------------------------------------------------------------
+    use_cases                                    | list[dict]                       | List of use case dicts from page 10
     """
     # Page config (use same favicon as landing page for consistency)
     st.set_page_config(

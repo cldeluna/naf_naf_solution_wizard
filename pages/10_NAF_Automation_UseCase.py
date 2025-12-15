@@ -290,9 +290,78 @@ def main() -> None:
     st.session_state['use_cases'] so it can be consumed by the
     Solution Wizard export.
 
-    Render the NAF Automation Use Case page.
+    ==================================================================================
+    STATE PERSISTENCE ACROSS PAGES
+    ==================================================================================
+    This page shares state with the Solution Wizard page (20_NAF_Solution_Wizard.py)
+    via st.session_state. The key shared data structure is:
 
+    - "use_cases": list[dict] - List of use case dictionaries
+    - "use_case_active_index": int - Index of currently selected use case (-1 if none)
 
+    When the user navigates to the Solution Wizard page, use_cases are displayed
+    in the "Automation Use Cases" expander and included in the JSON export.
+
+    ==================================================================================
+    GUI FIELD TO VARIABLE MAPPING
+    ==================================================================================
+    Below is a mapping of GUI field labels to their session_state keys and types.
+
+    USE CASE SELECTOR:
+    ---------------------------------------------------------------------------------
+    GUI Label                                    | st.session_state Key     | Type
+    ---------------------------------------------------------------------------------
+    Select a use case to view/edit               | use_case_selector        | int (selectbox, single)
+    (Active index tracking)                      | use_case_active_index    | int
+
+    USE CASE FIELDS (per use case, idx = use case index):
+    ---------------------------------------------------------------------------------
+    GUI Label                                    | st.session_state Key Pattern     | Type
+    ---------------------------------------------------------------------------------
+    Use case name                                | uc_name_{idx}                    | str (text_input)
+    Description / Problem Statement              | uc_description_{idx}             | str (text_area)
+    Expected Outcome                             | uc_expected_outcome_{idx}        | str (text_area)
+    Category                                     | uc_category_{idx}                | str (selectbox, single)
+    Custom category (if "Other")                 | uc_category_other_{idx}          | str (text_input)
+    Assumptions                                  | uc_assumptions_{idx}             | str (text_area)
+    Trigger                                      | uc_trigger_{idx}                 | str (text_area)
+    Building Blocks                              | uc_building_blocks_{idx}         | str (text_area)
+    Setup Task                                   | uc_setup_task_{idx}              | str (text_area)
+    Task(s)                                      | uc_tasks_{idx}                   | str (text_area)
+    Standard Deployment Strategy                 | uc_standard_deployment_strategy_{idx} | str (selectbox, single)
+    Deployment Strategy Description              | uc_deployment_strategy_{idx}     | str (text_area)
+    Error Conditions                             | uc_error_conditions_{idx}        | str (text_area)
+
+    CONTROL BUTTONS:
+    ---------------------------------------------------------------------------------
+    GUI Label                                    | st.session_state Key     | Type
+    ---------------------------------------------------------------------------------
+    ➕ Add new use case                          | uc_add_new               | button
+    🗑️ Delete current use case                  | uc_delete_current        | button
+
+    USE CASE DATA STRUCTURE (stored in use_cases list):
+    ---------------------------------------------------------------------------------
+    Field Key                | Type   | Description
+    ---------------------------------------------------------------------------------
+    name                     | str    | Use case name
+    description              | str    | Description / Problem Statement
+    expected_outcome         | str    | Expected Outcome
+    category                 | str    | Category (from YAML or custom)
+    assumptions              | str    | Assumptions
+    trigger                  | str    | Trigger
+    building_blocks          | str    | Building Blocks
+    setup_task               | str    | Setup Task
+    tasks                    | str    | Task(s)
+    standard_deployment_strategy | str | Standard Deployment Strategy
+    deployment_strategy      | str    | Deployment Strategy Description
+    error_conditions         | str    | Error Conditions
+
+    EXTERNAL DATA FILES:
+    ---------------------------------------------------------------------------------
+    File                           | Purpose
+    ---------------------------------------------------------------------------------
+    use_case_categories.yml        | Provides category options for selectbox
+    deployment_strategies.yml      | Provides deployment strategy options for selectbox
     """
 
     # Shared sidebar branding
