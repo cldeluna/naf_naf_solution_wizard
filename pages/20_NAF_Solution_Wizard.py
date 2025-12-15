@@ -351,7 +351,9 @@ def solution_wizard_main():
     ---------------------------------------------------------------------------------
     GUI Label                                    | st.session_state Key             | Type
     ---------------------------------------------------------------------------------
+    Development approach                         | timeline_build_buy               | str (radio, single)
     Direct staff on project                      | timeline_staff_count             | int (number_input)
+    Professional services staff                  | timeline_external_staff_count    | int (number_input)
     Staffing plan (markdown)                     | timeline_staffing_plan           | str (text_area)
     Holiday calendar                             | timeline_holiday_region          | str (selectbox, single)
     Project start date                           | timeline_start_date              | date (date_input)
@@ -458,7 +460,9 @@ def solution_wizard_main():
                 "automation_description",
                 "expected_use",
                 "out_of_scope",
+                "timeline_build_buy",
                 "timeline_staff_count",
+                "timeline_external_staff_count",
                 "timeline_staffing_plan",
                 "timeline_holiday_region",
                 "timeline_start_date",
@@ -612,7 +616,9 @@ def solution_wizard_main():
                                 "no_move_forward",
                                 "no_move_forward_reasons",
                                 "timeline_milestones",
+                                "timeline_build_buy",
                                 "timeline_staff_count",
+                                "timeline_external_staff_count",
                                 "timeline_staffing_plan",
                                 "timeline_holiday_region",
                                 "timeline_start_date",
@@ -1007,12 +1013,22 @@ def solution_wizard_main():
 
                             # Timeline basics
                             tl = data.get("timeline", {}) or {}
+                            if tl.get("build_buy") is not None:
+                                st.session_state["timeline_build_buy"] = tl.get("build_buy")
+                                st.session_state["_timeline_build_buy"] = tl.get("build_buy")
                             if tl.get("staff_count") is not None:
                                 st.session_state["timeline_staff_count"] = int(
                                     tl.get("staff_count") or 0
                                 )
                                 st.session_state["_timeline_staff_count"] = int(
                                     tl.get("staff_count") or 0
+                                )
+                            if tl.get("external_staff_count") is not None:
+                                st.session_state["timeline_external_staff_count"] = int(
+                                    tl.get("external_staff_count") or 0
+                                )
+                                st.session_state["_timeline_external_staff_count"] = int(
+                                    tl.get("external_staff_count") or 0
                                 )
                             if tl.get("staffing_plan_md") is not None:
                                 st.session_state["timeline_staffing_plan"] = tl.get(
@@ -2296,7 +2312,21 @@ def solution_wizard_main():
         st.caption(
             "Provide expected direct staffing and a short plan. Markdown is supported."
         )
-        col_sp1, col_sp2 = st.columns([1, 3])
+
+        # Build/Buy/Hybrid selection
+        build_buy_options = ["Build In-House", "Build with Professional Services or other external resources (Buy)", "Hybrid"]
+        if "timeline_build_buy" not in st.session_state:
+            st.session_state["timeline_build_buy"] = "Build In-House"
+        build_buy_choice = st.radio(
+            "Development approach",
+            options=build_buy_options,
+            key="_timeline_build_buy",
+            horizontal=True,
+            help="Select whether this solution will be built in-house, purchased, or a combination.",
+        )
+        st.session_state["timeline_build_buy"] = build_buy_choice
+
+        col_sp1, col_sp2, col_sp3 = st.columns([1, 1, 2])
         with col_sp1:
             staff_count = st.number_input(
                 "Direct staff on project",
@@ -2304,9 +2334,20 @@ def solution_wizard_main():
                 value=int(st.session_state.get("timeline_staff_count", 1)),
                 step=1,
                 key="_timeline_staff_count",
+                help="Number of direct employees from your team or from another team in your organization.",
             )
             st.session_state["timeline_staff_count"] = int(staff_count)
         with col_sp2:
+            external_staff_count = st.number_input(
+                "Professional services staff",
+                min_value=0,
+                value=int(st.session_state.get("timeline_external_staff_count", 0)),
+                step=1,
+                key="_timeline_external_staff_count",
+                help="Number of external staff working on project (e.g., staff augmentation or professional services engagement).",
+            )
+            st.session_state["timeline_external_staff_count"] = int(external_staff_count)
+        with col_sp3:
             staffing_plan = st.text_area(
                 "Staffing plan (markdown supported)",
                 value=str(st.session_state.get("timeline_staffing_plan", "")),
@@ -2531,7 +2572,9 @@ def solution_wizard_main():
             "projected_completion": (
                 schedule[-1]["end"].strftime("%Y-%m-%d") if schedule else None
             ),
+            "build_buy": st.session_state.get("timeline_build_buy", "Build In-House"),
             "staff_count": int(st.session_state.get("timeline_staff_count", 0)),
+            "external_staff_count": int(st.session_state.get("timeline_external_staff_count", 0)),
             "staffing_plan_md": st.session_state.get("timeline_staffing_plan", ""),
             "holiday_region": holiday_region,
             "items": [
