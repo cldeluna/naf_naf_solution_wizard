@@ -52,7 +52,7 @@ Quickly try the Streamlit hosted app [here](https://naf-naf-wizard.streamlit.app
    - macOS/Linux: `curl -LsSf https://astral.sh/uv/install.sh | sh`
 2. From the project folder:
    - Create/resolve env and install: `uv sync`
-   - Run the app: `uv run streamlit run naf_naf_solution_wizard.py`
+   - Run the app: `uv run streamlit run NAF_NAF_Solution_Wizard.py`
 
 ### Using pip
 
@@ -63,7 +63,7 @@ Quickly try the Streamlit hosted app [here](https://naf-naf-wizard.streamlit.app
 2. Install dependencies:
    - `pip install -U streamlit jinja2 plotly pandas kaleido`
 3. Run the app:
-   - `streamlit run naf_naf_solution_wizard.py`
+   - `streamlit run NAF_NAF_Solution_Wizard.py`
 
 ## How to use the Wizard
 
