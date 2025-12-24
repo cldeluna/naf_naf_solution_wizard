@@ -39,7 +39,7 @@ def main() -> None:
     )
 
     # --- Use Case Categories ---
-    with st.expander("Use Case Categories", expanded=False):
+    with st.expander("Categories", expanded=False):
         yaml_path = Path(__file__).parent.parent / "use_case_categories.yml"
         try:
             with open(yaml_path, "r") as f:
@@ -77,52 +77,52 @@ def main() -> None:
             st.error(f"Error loading deployment strategies: {e}")
 
     # --- Tools ---
-    with st.expander("Automation Tools", expanded=False):
-        tools_path = Path(__file__).parent.parent / "tools.yml"
-        try:
-            with open(tools_path, "r") as f:
-                tools_data = yaml.safe_load(f)
-            if tools_data and isinstance(tools_data, dict):
-                tools_dict = tools_data.get("tools", {})
-                if tools_dict and isinstance(tools_dict, dict):
-                    for tool_category, tool_list in tools_dict.items():
-                        st.markdown(f"### {tool_category}")
-                        if isinstance(tool_list, list):
-                            table_data = []
-                            for tool in tool_list:
-                                if isinstance(tool, dict):
-                                    name = tool.get("name", "Unknown")
-                                    url = tool.get("url", "")
-                                    notes = tool.get("notes", "")
-                                    # Build name with link for definition
-                                    if url:
-                                        name_display = f"[{name}]({url})"
-                                    else:
-                                        name_display = name
-                                    table_data.append({
-                                        "Name": name_display,
-                                        "Definition": notes
-                                    })
-                            if table_data:
-                                st.markdown(
-                                    "| Name | Definition |\n|------|------------|\n"
-                                    + "\n".join(
-                                        f"| {row['Name']} | {row['Definition']} |"
-                                        for row in table_data
-                                    )
-                                )
-                        st.markdown("")  # Add spacing between categories
-                else:
-                    st.info("No tools found in the 'tools' key.")
-            else:
-                st.info("No tools data found.")
-        except FileNotFoundError:
-            st.warning(f"File not found: `{tools_path}`")
-        except yaml.YAMLError as e:
-            st.error(f"YAML syntax error in tools.yml: {e}")
-            st.info("The tools.yml file contains unquoted colons in string values. Please quote strings containing colons.")
-        except Exception as e:
-            st.error(f"Error loading tools: {e}")
+    # with st.expander("Automation Tools", expanded=False):
+    #     tools_path = Path(__file__).parent.parent / "tools.yml"
+    #     try:
+    #         with open(tools_path, "r") as f:
+    #             tools_data = yaml.safe_load(f)
+    #         if tools_data and isinstance(tools_data, dict):
+    #             tools_dict = tools_data.get("tools", {})
+    #             if tools_dict and isinstance(tools_dict, dict):
+    #                 for tool_category, tool_list in tools_dict.items():
+    #                     st.markdown(f"### {tool_category}")
+    #                     if isinstance(tool_list, list):
+    #                         table_data = []
+    #                         for tool in tool_list:
+    #                             if isinstance(tool, dict):
+    #                                 name = tool.get("name", "Unknown")
+    #                                 url = tool.get("url", "")
+    #                                 notes = tool.get("notes", "")
+    #                                 # Build name with link for definition
+    #                                 if url:
+    #                                     name_display = f"[{name}]({url})"
+    #                                 else:
+    #                                     name_display = name
+    #                                 table_data.append({
+    #                                     "Name": name_display,
+    #                                     "Definition": notes
+    #                                 })
+    #                         if table_data:
+    #                             st.markdown(
+    #                                 "| Name | Definition |\n|------|------------|\n"
+    #                                 + "\n".join(
+    #                                     f"| {row['Name']} | {row['Definition']} |"
+    #                                     for row in table_data
+    #                                 )
+    #                             )
+    #                     st.markdown("")  # Add spacing between categories
+    #             else:
+    #                 st.info("No tools found in the 'tools' key.")
+    #         else:
+    #             st.info("No tools data found.")
+    #     except FileNotFoundError:
+    #         st.warning(f"File not found: `{tools_path}`")
+    #     except yaml.YAMLError as e:
+    #         st.error(f"YAML syntax error in tools.yml: {e}")
+    #         st.info("The tools.yml file contains unquoted colons in string values. Please quote strings containing colons.")
+    #     except Exception as e:
+    #         st.error(f"Error loading tools: {e}")
 
 
 if __name__ == "__main__":  # pragma: no cover - Streamlit entry

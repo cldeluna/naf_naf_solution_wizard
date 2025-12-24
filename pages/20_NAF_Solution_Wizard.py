@@ -33,6 +33,7 @@ from jinja2 import Environment, FileSystemLoader
 import io
 import re
 import json
+import yaml
 import zipfile
 import datetime
 import pandas as pd
@@ -116,6 +117,25 @@ def _sanitize_title(t: str) -> str:
         t = t.replace("__", "_")
     t = t.strip("_")
     return (t or "solution")[0:30]
+
+
+def _load_stakeholders_catalog() -> dict:
+    p = Path(__file__).resolve().parents[1] / "stakeholders.json"
+    try:
+        raw = p.read_text(encoding="utf-8")
+    except Exception:
+        return {}
+
+    for _ in range(2):
+        try:
+            data = json.loads(raw)
+            return data if isinstance(data, dict) else {}
+        except Exception:
+            raw = (raw or "").strip()
+            if raw.endswith("."):
+                raw = raw[:-1]
+                continue
+            return {}
 
 
 def _has_any_content(p: dict) -> bool:
@@ -224,12 +244,11 @@ def solution_wizard_main():
     - Business Case does not overwrite the Wizard values automatically.
 
     ==================================================================================
-    STATE PERSISTENCE ACROSS PAGES
+    STATE PERSISTENCE
     ==================================================================================
     Streamlit clears widget keys from st.session_state when the widget is not rendered
-    (i.e., when navigating away from a page). To preserve user input across page
-    navigation between the Use Case page (10_NAF_Automation_UseCase.py) and this
-    Solution Wizard page, we use a "backing key" pattern:
+    (i.e., when navigating away from a page). To preserve user input across navigation,
+    we use a "backing key" pattern:
 
     1. BACKING KEYS:
        - "_wizard_data": dict storing scalar field values (text inputs, text areas, etc.)
@@ -243,11 +262,6 @@ def solution_wizard_main():
        - If "_wizard_data" exists, iterate and restore keys not already in session_state
        - If "_wizard_checkboxes" exists, restore checkbox states similarly
        - This runs before widgets render, so widgets pick up the restored values
-
-    4. SHARED STATE WITH USE CASE PAGE:
-       - "use_cases" key in st.session_state is shared between pages
-       - Use cases defined on page 10 appear in the wizard's "Automation Use Cases" expander
-       - JSON export includes use_cases from session_state
 
     ==================================================================================
     GUI FIELD TO VARIABLE MAPPING
@@ -268,6 +282,7 @@ def solution_wizard_main():
     ---------------------------------------------------------------------------------
     Automation initiative title                  | _wizard_automation_title         | str (text_input)
     Short description / scope                    | _wizard_automation_description   | str (text_area)
+    Problem statement                            | _wizard_problem_statement        | str (text_area)
     Expected use (Markdown supported)            | _wizard_expected_use             | str (text_area)
     Out of scope (optional)                      | _wizard_out_of_scope             | str (text_area)
     Standard reasons                             | no_move_forward_reasons          | list[str] (multiselect, multi)
@@ -362,11 +377,10 @@ def solution_wizard_main():
     Milestone duration (row N)                   | _tl_duration_{N}                 | int (number_input)
     Milestone notes (row N)                      | _tl_notes_{N}                    | str (text_input)
 
-    SHARED KEYS (with Use Case page):
+    SHARED KEYS:
     ---------------------------------------------------------------------------------
     Key                                          | Type                             | Description
     ---------------------------------------------------------------------------------
-    use_cases                                    | list[dict]                       | List of use case dicts from page 10
     """
     # Page config (use same favicon as landing page for consistency)
     st.set_page_config(
@@ -414,6 +428,7 @@ def solution_wizard_main():
                 "collector_auth_",
                 "collector_handle_",
                 "collector_norm_",
+                "stakeholders_",
             )
             for k in list(st.session_state.keys()):
                 if any([k.startswith(p) for p in prefixes]):
@@ -453,6 +468,7 @@ def solution_wizard_main():
                 "collector_handling_other_enable",
                 "collector_norm_other_enable",
                 "collection_tools_other_enable",
+                "stakeholders_other_enable",
             ]:
                 st.session_state[k] = False
             for k in [
@@ -475,6 +491,8 @@ def solution_wizard_main():
                 "obs_go_no_go",
                 "obs_add_logic_choice",
                 "obs_add_logic_text",
+                "stakeholders_choices",
+                "stakeholders_other_text",
             ]:
                 st.session_state.pop(k, None)
             # Minimal sane defaults
@@ -495,13 +513,20 @@ def solution_wizard_main():
             st.session_state["_wizard_automation_description"] = (
                 "Here is a short description of my my new network automation project"
             )
+            st.session_state["_wizard_problem_statement"] = ""
             st.session_state["_wizard_expected_use"] = (
-                "This automation will be used whenever this task needs to be executed. See Use Cases for more details."
+                "This automation will be used whenever this task needs to be executed."
             )
+            st.session_state["_wizard_error_conditions"] = ""
+            st.session_state["_wizard_assumptions"] = ""
+            st.session_state["_wizard_deployment_strategy"] = ""
+            st.session_state["_wizard_deployment_strategy_description"] = ""
             st.session_state["_wizard_out_of_scope"] = ""
+            st.session_state["_wizard_category"] = "— Select a category —"
+            st.session_state["_wizard_category_other"] = ""
             st.session_state["no_move_forward"] = ""
-            # Let the widget own no_move_forward_reasons; ensure any existing value is cleared
-            st.session_state.pop("no_move_forward_reasons", None)
+            # Set no_move_forward_reasons to placeholder for reset
+            st.session_state["no_move_forward_reasons"] = ["— Select one or more risks —"]
             # no separate details field; report is generated
             # Orchestration defaults so select resets visually
             st.session_state["orch_choice"] = "— Select one —"
@@ -558,6 +583,7 @@ def solution_wizard_main():
                                 "collector_norm_",
                                 "_wizard_",
                                 "_widget_",
+                                "stakeholders_",
                             )
                             for k in list(st.session_state.keys()):
                                 if any([k.startswith(p) for p in prefixes]):
@@ -596,6 +622,7 @@ def solution_wizard_main():
                                 "collector_handling_other_enable",
                                 "collector_norm_other_enable",
                                 "collection_tools_other_enable",
+                                "stakeholders_other_enable",
                             ]:
                                 st.session_state[k] = False
                             # Set Orchestration radio to sentinel
@@ -627,6 +654,8 @@ def solution_wizard_main():
                                 "collector_cadence",
                                 "orch_choice",
                                 "orch_details_text",
+                                "stakeholders_choices",
+                                "stakeholders_other_text",
                             ]:
                                 st.session_state.pop(k, None)
 
@@ -640,9 +669,29 @@ def solution_wizard_main():
                                 st.session_state["_wizard_automation_description"] = str(
                                     ini.get("description") or ""
                                 )
+                            if ini.get("problem_statement") is not None:
+                                st.session_state["_wizard_problem_statement"] = str(
+                                    ini.get("problem_statement") or ""
+                                )
                             if ini.get("expected_use") is not None:
                                 st.session_state["_wizard_expected_use"] = str(
                                     ini.get("expected_use") or ""
+                                )
+                            if ini.get("error_conditions") is not None:
+                                st.session_state["_wizard_error_conditions"] = str(
+                                    ini.get("error_conditions") or ""
+                                )
+                            if ini.get("assumptions") is not None:
+                                st.session_state["_wizard_assumptions"] = str(
+                                    ini.get("assumptions") or ""
+                                )
+                            if ini.get("deployment_strategy") is not None:
+                                st.session_state["_wizard_deployment_strategy"] = str(
+                                    ini.get("deployment_strategy") or ""
+                                )
+                            if ini.get("deployment_strategy_description") is not None:
+                                st.session_state["_wizard_deployment_strategy_description"] = str(
+                                    ini.get("deployment_strategy_description") or ""
                                 )
                             if ini.get("out_of_scope") is not None:
                                 st.session_state["_wizard_out_of_scope"] = str(
@@ -660,18 +709,6 @@ def solution_wizard_main():
                                 else:
                                     st.session_state["no_move_forward_reasons"] = []
                             # ignore legacy initiative.solution_details_md in uploads
-
-                            # Use Cases (optional top-level list of dicts)
-                            if "use_cases" in data:
-                                ucs = data.get("use_cases") or []
-                                if isinstance(ucs, list):
-                                    # Shallow-copy to avoid accidental shared references
-                                    st.session_state["use_cases"] = [
-                                        dict(uc) if isinstance(uc, dict) else {}
-                                        for uc in ucs
-                                    ]
-                                else:
-                                    st.session_state["use_cases"] = []
 
                             # My Role
                             my_role = data.get("my_role", {}) or {}
@@ -1108,11 +1145,20 @@ def solution_wizard_main():
                                 "my_role_who_other": st.session_state.get("my_role_who_other"),
                                 "my_role_skills_other": st.session_state.get("my_role_skills_other"),
                                 "my_role_dev_other": st.session_state.get("my_role_dev_other"),
+                                "stakeholders_choices": st.session_state.get("stakeholders_choices"),
+                                "stakeholders_other_text": st.session_state.get("stakeholders_other_text"),
                                 "orch_choice": st.session_state.get("orch_choice"),
                                 "orch_details_text": st.session_state.get("orch_details_text"),
                                 "_wizard_automation_title": st.session_state.get("_wizard_automation_title"),
                                 "_wizard_automation_description": st.session_state.get("_wizard_automation_description"),
+                                "_wizard_category": st.session_state.get("_wizard_category"),
+                                "_wizard_category_other": st.session_state.get("_wizard_category_other"),
+                                "_wizard_problem_statement": st.session_state.get("_wizard_problem_statement"),
                                 "_wizard_expected_use": st.session_state.get("_wizard_expected_use"),
+                                "_wizard_error_conditions": st.session_state.get("_wizard_error_conditions"),
+                                "_wizard_assumptions": st.session_state.get("_wizard_assumptions"),
+                                "_wizard_deployment_strategy": st.session_state.get("_wizard_deployment_strategy"),
+                                "_wizard_deployment_strategy_description": st.session_state.get("_wizard_deployment_strategy_description"),
                                 "_wizard_out_of_scope": st.session_state.get("_wizard_out_of_scope"),
                                 "no_move_forward": st.session_state.get("no_move_forward"),
                                 "no_move_forward_reasons": st.session_state.get("no_move_forward_reasons"),
@@ -1182,6 +1228,9 @@ def solution_wizard_main():
         st.caption(
             "Source: https://github.com/Network-Automation-Forum/reference/blob/main/docs/Framework/Framework.md"
         )
+        st.markdown("This Wizard will help you define the WHY, WHO, HOW, and WHAT of your automation project.")
+        st.info("🔽  Expand each section to get started!")
+
     with col_text:
         st.subheader("Solution Wizard")
         st.markdown(
@@ -1201,15 +1250,242 @@ def solution_wizard_main():
 
     # -------- Inputs --------
 
-    # My Role (collapsed by default)
-    with st.expander("My Role", expanded=False):
-        """
-        Capture who is filling in the wizard and their skill/role context.
+    # Automation Project Title & Short Description (shared with Business Case page)
+    with st.expander(
+            "Automation Project Problem Statement & Description (Why is this Automation needed?)",
+            expanded=False,
+    ):
+        # Includes title, short description/scope, expected use, out of scope, and detailed description.
 
-        Populates payload.my_role and is used to gate exporting and highlights visibility.
-        """
+        st.caption(
+            "One-way sync to Business Case when empty or default: Title, Short description, Expected use, Out of scope, and Detailed description."
+        )
+        # Initialize defaults - use _wizard_ keys directly as widget keys
+        # When JSON is uploaded, these keys are cleared and reset, so widgets pick up new values
+        if "_wizard_automation_title" not in st.session_state:
+            st.session_state["_wizard_automation_title"] = "My new network automation project"
+        if "_wizard_automation_description" not in st.session_state:
+            st.session_state["_wizard_automation_description"] = (
+                "Here is a short description of my my new network automation project"
+            )
+        if "_wizard_problem_statement" not in st.session_state:
+            st.session_state["_wizard_problem_statement"] = ""
+        if "_wizard_expected_use" not in st.session_state:
+            st.session_state["_wizard_expected_use"] = (
+                "This automation will be used whenever this task needs to be executed."
+            )
+        if "_wizard_error_conditions" not in st.session_state:
+            st.session_state["_wizard_error_conditions"] = ""
+        if "_wizard_assumptions" not in st.session_state:
+            st.session_state["_wizard_assumptions"] = ""
+        if "_wizard_deployment_strategy" not in st.session_state:
+            st.session_state["_wizard_deployment_strategy"] = ""
+        if "_wizard_deployment_strategy_description" not in st.session_state:
+            st.session_state["_wizard_deployment_strategy_description"] = ""
+        if "_wizard_out_of_scope" not in st.session_state:
+            st.session_state["_wizard_out_of_scope"] = ""
+        if "_wizard_category" not in st.session_state:
+            st.session_state["_wizard_category"] = "— Select a category —"
+        if "_wizard_category_other" not in st.session_state:
+            st.session_state["_wizard_category_other"] = ""
+
+        col_ib1, col_ib2 = st.columns([2, 3])
+        with col_ib1:
+            st.text_input(
+                "Automation initiative title",
+                key="_wizard_automation_title",
+            )
+        with col_ib2:
+            st.text_area(
+                "Short description / scope",
+                height=80,
+                key="_wizard_automation_description",
+            )
+
+        # Category (load from YAML file)
+        yaml_path = Path(__file__).parent.parent / "use_case_categories.yml"
+        try:
+            with open(yaml_path, "r") as f:
+                categories_data = yaml.safe_load(f)
+            category_options = list(categories_data.keys()) if categories_data else []
+        except Exception:
+            category_options = []
+        # Add placeholder as first option
+        placeholder = "— Select a category —"
+        category_options_with_placeholder = [placeholder] + category_options
+        current_cat = st.session_state.get("_wizard_category", "") or placeholder
+        if current_cat not in category_options_with_placeholder:
+            current_cat = "Other"
+        cat = st.selectbox(
+            "Category",
+            options=category_options_with_placeholder,
+            index=category_options_with_placeholder.index(current_cat)
+            if current_cat in category_options_with_placeholder
+            else 0,
+            key="_wizard_category",
+            help=(
+                "Select a category from the list. Choose 'Other' if your initiative "
+                "doesn't fit the predefined categories."
+            ),
+        )
+        if cat == placeholder:
+            st.info("💡 Please select a category from the list above.")
+            initiative_category = ""
+        elif cat == "Other":
+            cat_other = st.text_input(
+                "Custom category",
+                value=st.session_state.get("_wizard_category_other", "")
+                if st.session_state.get("_wizard_category", "") not in category_options
+                else "",
+                key="_wizard_category_other",
+            )
+            initiative_category = cat_other or cat
+        else:
+            initiative_category = cat
+
+        st.text_area(
+            "Problem Statement (Markdown supported)",
+            height=80,
+            key="_wizard_problem_statement",
+            help="Describe the circumstances under which this automation will be used.",
+        )
+
+        st.text_area(
+            "Expected Use/Triggers (Markdown supported)",
+            height=80,
+            key="_wizard_expected_use",
+            help="Describe the circumstances under which this automation will be used or triggered.",
+        )
+
+        st.text_area(
+            "Error Conditions (Markdown supported)",
+            height=80,
+            key="_wizard_error_conditions",
+            help="Note any expected error conditions that need to be addressed in the initial version",
+        )
+
+        st.text_area(
+            "Assumptions (Markdown supported)",
+            height=80,
+            key="_wizard_assumptions",
+            help="List any assumptions made for this automation initiative.",
+        )
+
+        st.text_area(
+            "Out of Scope (optional)",
+            height=80,
+            key="_wizard_out_of_scope",
+            help="List areas intentionally excluded from this initiative.",
+        )
+
+        # Standard Deployment Strategy (load from YAML file)
+        deploy_yaml_path = Path(__file__).parent.parent / "deployment_strategies.yml"
+        try:
+            with open(deploy_yaml_path, "r") as f:
+                deploy_data = yaml.safe_load(f)
+            deploy_options = list(deploy_data.keys()) if deploy_data else []
+        except Exception:
+            deploy_options = []
+        # Add placeholder as first option
+        deploy_placeholder = "— Select a deployment strategy —"
+        deploy_options_with_placeholder = [deploy_placeholder] + deploy_options
+        
+        # Initialize the session state if not set
+        if "_wizard_deployment_strategy" not in st.session_state:
+            st.session_state["_wizard_deployment_strategy"] = deploy_placeholder
+        
+        current_deploy = st.session_state.get("_wizard_deployment_strategy", deploy_placeholder)
+        if current_deploy not in deploy_options_with_placeholder:
+            current_deploy = deploy_placeholder
+            st.session_state["_wizard_deployment_strategy"] = deploy_placeholder
+        
+        deploy_sel = st.selectbox(
+            "Standard Deployment Strategy",
+            options=deploy_options_with_placeholder,
+            index=deploy_options_with_placeholder.index(current_deploy)
+            if current_deploy in deploy_options_with_placeholder
+            else 0,
+            key="_wizard_deployment_strategy",
+            help="Select a standard deployment strategy from the list.",
+        )
+        
+        if deploy_sel == deploy_placeholder:
+            st.info("💡 Please select a deployment strategy from the list above.")
+
+        st.text_area(
+            "Deployment Strategy Description (optional)",
+            height=80,
+            key="_wizard_deployment_strategy_description",
+            help="Additional details about how the automation will be deployed.",
+        )
+
+        # Standard reasons multiselect (required)
+        standard_reasons = [
+            "We are not improving the way our customers interact with us for service provisioning",
+            "We are not improving the speed and quality of our service provisioning",
+            "We are not meeting feature or service demands from our customers",
+            "We will continue to pay for 3rd party support for this task",
+            "This task will continue to be executed individually in an inconsistent and ad-hoc manner with varying degrees of success and documentation",
+            "This task will continue to take far longer than it should resulting in poor customer satisfaction",
+            "We risk continuing to add technical debt to the logical infrastructure"
+        ]
+
+        # Initialize default if not set (widget key is set directly during JSON upload)
+        if "no_move_forward_reasons" not in st.session_state:
+            st.session_state["no_move_forward_reasons"] = ["— Select one or more risks —"]
+
+        # Add placeholder as first option
+        risk_placeholder = "— Select one or more risks —"
+        risk_options_with_placeholder = [risk_placeholder] + standard_reasons
+        
+        no_move_forward_reasons = st.multiselect(
+            "Risk of not doing the automation",
+            options=risk_options_with_placeholder,
+            key="no_move_forward_reasons",
+            help="Select at least one standard reason that applies.",
+        )
+        
+        # Remove placeholder if selected
+        if risk_placeholder in no_move_forward_reasons:
+            no_move_forward_reasons = [x for x in no_move_forward_reasons if x != risk_placeholder]
+
+        # Show warning if no standard reasons selected
+        if not no_move_forward_reasons:
+            st.info("💡 Please select at least one standard reason.")
+
+        # Initialize default if not set
+        if "no_move_forward" not in st.session_state:
+            st.session_state["no_move_forward"] = ""
+
+        no_move_forward = st.text_area(
+            "Additional risks in not moving forward (optional)",
+            height=80,
+            key="no_move_forward",
+        )
+
+        payload["initiative"] = {
+            "title": st.session_state.get("_wizard_automation_title", ""),
+            "description": st.session_state.get("_wizard_automation_description", ""),
+            "category": initiative_category,
+            "problem_statement": st.session_state.get("_wizard_problem_statement", ""),
+            "expected_use": st.session_state.get("_wizard_expected_use", ""),
+            "error_conditions": st.session_state.get("_wizard_error_conditions", ""),
+            "assumptions": st.session_state.get("_wizard_assumptions", ""),
+            "deployment_strategy": st.session_state.get("_wizard_deployment_strategy", "") if st.session_state.get("_wizard_deployment_strategy", "") != "— Select a deployment strategy —" else "",
+            "deployment_strategy_description": st.session_state.get("_wizard_deployment_strategy_description", ""),
+            "out_of_scope": st.session_state.get("_wizard_out_of_scope", ""),
+            "no_move_forward": no_move_forward,
+            "no_move_forward_reasons": no_move_forward_reasons,
+        }
+
+    with st.expander("Stakeholders (Who is supporting the project?)", expanded=False):
+        # Capture who is filling in the wizard and their skill/role context.
+        #
+        # Populates payload.my_role and is used to gate exporting and highlights visibility.
+
         SENTINEL_SELECT = "— Select one —"
         # Q1: Who’s filling out this wizard?
+        st.header("My Role")
         st.subheader("Who’s filling out this wizard?")
         role_opts = [
             SENTINEL_SELECT,
@@ -1279,135 +1555,95 @@ def solution_wizard_main():
             "developer": _norm_role_choice(dev_choice, dev_other, SENTINEL_SELECT),
         }
 
-    # Automation Project Title & Short Description (shared with Business Case page)
-    with st.expander("Automation Project Title & Description", expanded=True):
-        # Includes title, short description/scope, expected use, out of scope, and detailed description.
+        st.markdown("---")
+        st.header("Stakeholders")
+        if "stakeholders_choices" not in st.session_state or not isinstance(
+                st.session_state.get("stakeholders_choices"), dict
+        ):
+            st.session_state["stakeholders_choices"] = {}
+        if "stakeholders_other_text" not in st.session_state:
+            st.session_state["stakeholders_other_text"] = ""
 
-        st.caption(
-            "One-way sync to Business Case when empty or default: Title, Short description, Expected use, Out of scope, and Detailed description."
-        )
-        # Initialize defaults - use _wizard_ keys directly as widget keys
-        # When JSON is uploaded, these keys are cleared and reset, so widgets pick up new values
-        if "_wizard_automation_title" not in st.session_state:
-            st.session_state["_wizard_automation_title"] = "My new network automation project"
-        if "_wizard_automation_description" not in st.session_state:
-            st.session_state["_wizard_automation_description"] = (
-                "Here is a short description of my my new network automation project"
+        catalog = _load_stakeholders_catalog()
+        choices = st.session_state["stakeholders_choices"]
+        stakeholder_help = {
+            "Technical Stakeholders": "Select which engineering or operations teams are responsible for building, operating, or securing the systems that this automation will affect.\n\nUse this when identifying the technical groups that will design, implement, or maintain the solution.",
+            "User and Customer Stakeholders": "Select which internal users or external customers will rely on the outcomes of this automation in their day-to-day work.\n\nUse this to capture the teams whose workflows, support experience, or service consumption will change.",
+            "Governance and Risk Stakeholders": "Select which governance, security, or risk functions must review, approve, or oversee this automation effort.\n\nUse this for groups that manage policies, audits, or regulatory obligations impacted by the change.",
+            "Business and Leadership Stakeholders": "Select which business owners, executives, or project leaders are sponsoring, funding, or directing this automation effort.\n\nUse this to identify decision-makers accountable for business outcomes, budget, and prioritization.",
+            "External/Vendor/Partner Stakeholders": "Select which external vendors, consulting partners, or regulatory bodies are materially involved in delivering, integrating, or approving this automation.\n\nUse this for third parties that provide technology, services, or oversight required for success.",
+        }
+        rendered = {}
+        for cat, opts in (catalog or {}).items():
+            if not isinstance(cat, str):
+                continue
+            if not isinstance(opts, list):
+                continue
+            st.subheader(cat)
+            key = f"stakeholders_choice_{_sanitize_title(cat)}"
+            if key not in st.session_state:
+                st.session_state[key] = SENTINEL_SELECT
+            select_opts = [SENTINEL_SELECT] + [str(o) for o in opts if str(o).strip()]
+            st.selectbox(
+                "",
+                options=select_opts,
+                index=0,
+                key=key,
+                help=stakeholder_help.get(cat, ""),
             )
-        if "_wizard_expected_use" not in st.session_state:
-            st.session_state["_wizard_expected_use"] = (
-                "This automation will be used whenever this task needs to be executed. See Use Cases for more details."
-            )
-        if "_wizard_out_of_scope" not in st.session_state:
-            st.session_state["_wizard_out_of_scope"] = ""
+            val = st.session_state.get(key) or ""
+            rendered[cat] = "" if val == SENTINEL_SELECT else val
 
-        col_ib1, col_ib2 = st.columns([2, 3])
-        with col_ib1:
-            st.text_input(
-                "Automation initiative title",
-                key="_wizard_automation_title",
-            )
-        with col_ib2:
-            st.text_area(
-                "Short description / scope",
-                height=80,
-                key="_wizard_automation_description",
-            )
+        choices.update(rendered)
+        st.session_state["stakeholders_choices"] = choices
 
-        st.text_area(
-            "Expected use (Markdown supported)",
-            height=80,
-            key="_wizard_expected_use",
-            help="Describe the circumstances under which this automation will be used.",
+        st.subheader("Other")
+        st.text_input(
+            "Other stakeholder(s)",
+            key="stakeholders_other_text",
         )
 
-        st.text_area(
-            "Out of scope (optional)",
-            height=80,
-            key="_wizard_out_of_scope",
-            help="List areas intentionally excluded from this initiative.",
-        )
-
-        # Standard reasons multiselect (required)
-        standard_reasons = [
-            "We are not improving the way our customers interact with us for service provisioning",
-            "We are not improving the speed and quality of our service provisioning",
-            "We are not meeting feature or service demands from our customers",
-            "We will continue to pay for 3rd party support for this task",
-            "This task will continue to be executed individually in an inconsistent and ad-hoc manner with varying degrees of success and documentation",
-            "This task will continue to take far longer than it should resulting in poor customer satisfaction",
-            "We risk continuing to add technical debt to the logical infrastructure"
-        ]
-
-        # Initialize default if not set (widget key is set directly during JSON upload)
-        if "no_move_forward_reasons" not in st.session_state:
-            st.session_state["no_move_forward_reasons"] = []
-
-        no_move_forward_reasons = st.multiselect(
-            "Standard reasons",
-            options=standard_reasons,
-            key="no_move_forward_reasons",
-            help="Select at least one standard reason that applies.",
-        )
-
-        # Show warning if no standard reasons selected
-        if not no_move_forward_reasons:
-            st.warning("Please select at least one standard reason.")
-
-        # Initialize default if not set
-        if "no_move_forward" not in st.session_state:
-            st.session_state["no_move_forward"] = ""
-
-        no_move_forward = st.text_area(
-            "Additional risks in not moving forward (optional)",
-            height=80,
-            key="no_move_forward",
-        )
-
-        payload["initiative"] = {
-            "title": st.session_state.get("_wizard_automation_title", ""),
-            "description": st.session_state.get("_wizard_automation_description", ""),
-            "expected_use": st.session_state.get("_wizard_expected_use", ""),
-            "out_of_scope": st.session_state.get("_wizard_out_of_scope", ""),
-            "no_move_forward": no_move_forward,
-            "no_move_forward_reasons": no_move_forward_reasons,
+        payload["stakeholders"] = {
+            "choices": st.session_state.get("stakeholders_choices") or {},
+            "other": (st.session_state.get("stakeholders_other_text") or "").strip(),
         }
 
     # Collapsible guiding questions
-    with st.expander("Guiding Questions by Framework Component", expanded=False):
-        """
-        Reference prompts to help users think through each framework component.
-        """
-        st.markdown(
+    if False:
+        with st.expander("Guiding Questions by Framework Component", expanded=False):
             """
-            - **Presentation**
-              - Provides user interfaces (dashboards/GUI, ITSM, chat, CLI) and access controls for interacting with the system.
-              - Can allow both read and write interactions and integrates with other components as needed.
-
-            - **Intent**
-              - Defines the logic and the persistence layer for the desired state of the network (config and operational expectations).
-              - Represents network aspects in structured form, supports CRUD via standard APIs, uses neutral models, and can include validation, aggregation, service decomposition, and artifact generation.
-
-            - **Observability**
-              - Persists the actual network state and provides logic to process it.
-              - Offers programmatic access and query for analytics, detects drift vs. intent, and can enrich data with context (e.g., EoL, CVEs, maintenance).
-
-            - **Orchestrator**
-              - Coordinates and sequences automation tasks across components in response to events.
-              - Can be event‑driven, support dry‑run, scheduling, rollback/compensation, logging/traceability, and correlation.
-
-            - **Collector**
-              - Retrieves the actual state (reads) from the network via APIs/CLIs and telemetry (e.g., SNMP, syslog, flows, streaming telemetry) and can normalize data across vendors.
-
-            - **Executor**
-              - Performs the network changes (writes) guided by intent.
-              - Works with write interfaces (CLI/SSH, NETCONF, gNMI/gNOI, REST), supports transactional/dry‑run flows, and can operate in imperative or declarative styles with idempotency.
-
+            Reference prompts to help users think through each framework component.
             """
-        )
+            st.markdown(
+                """
+                - **Presentation**
+                  - Provides user interfaces (dashboards/GUI, ITSM, chat, CLI) and access controls for interacting with the system.
+                  - Can allow both read and write interactions and integrates with other components as needed.
+
+                - **Intent**
+                  - Defines the logic and the persistence layer for the desired state of the network (config and operational expectations).
+                  - Represents network aspects in structured form, supports CRUD via standard APIs, uses neutral models, and can include validation, aggregation, service decomposition, and artifact generation.
+
+                - **Observability**
+                  - Persists the actual network state and provides logic to process it.
+                  - Offers programmatic access and query for analytics, detects drift vs. intent, and can enrich data with context (e.g., EoL, CVEs, maintenance).
+
+                - **Orchestrator**
+                  - Coordinates and sequences automation tasks across components in response to events.
+                  - Can be event‑driven, support dry‑run, scheduling, rollback/compensation, logging/traceability, and correlation.
+
+                - **Collector**
+                  - Retrieves the actual state (reads) from the network via APIs/CLIs and telemetry (e.g., SNMP, syslog, flows, streaming telemetry) and can normalize data across vendors.
+
+                - **Executor**
+                  - Performs the network changes (writes) guided by intent.
+                  - Works with write interfaces (CLI/SSH, NETCONF, gNMI/gNOI, REST), supports transactional/dry‑run flows, and can operate in imperative or declarative styles with idempotency.
+
+                """
+            )
 
     utils.thick_hr(color=hr_color_dict["naf_yellow"], thickness=5)
-    st.markdown("***Expand each section of the framework to work though the wizard***")
+    st.markdown("***Expand each section to work through the framework components.  The NAF Framework will help define how your automation will work.***")
 
     # Presentation section
     with st.expander("Presentation", expanded=False):
@@ -2179,9 +2415,6 @@ def solution_wizard_main():
             },
         }
 
-    # Include use cases from session state
-    payload["use_cases"] = st.session_state.get("use_cases", [])
-
     # Transition to external interfaces and planning
     utils.thick_hr(color=hr_color_dict["naf_yellow"], thickness=5)
     st.markdown(
@@ -2589,23 +2822,6 @@ def solution_wizard_main():
             ],
         }
 
-    # Collapsed preview of any Use Cases captured on the separate page
-    try:
-        use_cases = st.session_state.get("use_cases", [])
-    except Exception:
-        use_cases = []
-    uc_count = len(use_cases) if isinstance(use_cases, list) else 0
-    uc_title_suffix = f" ({uc_count})" if uc_count else " (0)"
-    with st.expander(f"Automation Use Cases{uc_title_suffix}", expanded=False):
-        if not uc_count:
-            st.info(
-                "No automation use cases have been defined yet. Use the 'Automation Use Cases' page to capture them."
-            )
-        else:
-            for i, uc in enumerate(use_cases, start=1):
-                name = (uc.get("name") or "").strip() or "(Untitled)"
-                st.markdown(f"- Use Case {i}: {name}")
-
     # Determine if there is meaningful content across sections
     any_content = _has_any_content(payload)
     # Fallback: if the user has selected an orchestration choice (including 'No') via session_state,
@@ -2709,17 +2925,6 @@ def solution_wizard_main():
             ini_lines.append(f"- Out of scope: {_out}")
         # If details_md exists, we keep it for the export doc, but don't render here to avoid duplication
         summary_parts.append(_section_md("Initiative", ini_lines))
-
-        # Use Cases Summary (titles only)
-        use_cases = payload.get("use_cases", []) or []
-        uc_lines = []
-        if use_cases:
-            for i, uc in enumerate(use_cases):
-                uc_name = (uc.get("name") or "").strip() or "(Untitled)"
-                uc_lines.append(f"- Use Case {i + 1}: {uc_name}")
-        else:
-            uc_lines.append("- No use cases defined")
-        summary_parts.append(_section_md("Automation Use Cases", uc_lines))
 
         # Presentation
         pres = payload.get("presentation", {})
@@ -2967,72 +3172,25 @@ def solution_wizard_main():
                 "total_business_days": total_bd,
                 "projected_completion": cursor.strftime("%Y-%m-%d"),
                 "staff_count": 1,
-                "staffing_plan_md": "",
                 "holiday_region": "None",
                 "items": schedule,
             }
 
-        # Include any use cases captured on the dedicated Use Case page
+        sdd_template_env = None
+        sdd_ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         try:
-            if "use_cases" in st.session_state and isinstance(
-                    st.session_state.get("use_cases"), list
-            ):
-                final_payload["use_cases"] = st.session_state.get("use_cases", [])
-        except Exception:
-            # If session_state is unavailable or malformed, skip attaching use_cases
-            pass
-
-        # Ensure naf_report_md (formerly summary_md) is included at the top level
-        if "naf_report_md" not in final_payload:
-            final_payload["naf_report_md"] = summary_md if summary_md else ""
-
-        # Build bundled ZIP with JSON, SDD Markdown, and color Gantt chart
-        title_for_zip = _sanitize_title(
-            (payload.get("initiative", {}) or {}).get("title", "")
-        )
-        ts = datetime.datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-        zip_name = f"naf_report_{title_for_zip}_{ts}.zip"
-
-        # Ensure initiative exists
-        if "initiative" not in final_payload:
-            final_payload["initiative"] = payload.get("initiative", {})
-
-        # JSON content
-        final_json_bytes = json.dumps(final_payload, indent=2).encode("utf-8")
-
-        # SDD Markdown rendered via Jinja2 template
-        sdd_ts = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-        templates_dir = (Path(__file__).resolve().parent.parent / "templates").as_posix()
-        try:
-            env = Environment(loader=FileSystemLoader(templates_dir))
+            templates_dir = (Path(__file__).parent.parent / "templates").resolve()
+            env = Environment(
+                loader=FileSystemLoader(str(templates_dir)),
+                autoescape=False,
+            )
             tmpl = env.get_template("Solution_Design_Report.j2")
-            # Remove sections that are rendered separately in the template to prevent duplication
-            _hl = (summary_md or "").strip()
-            try:
-                for heading in (
-                        "My Role",
-                        "Initiative",
-                        "Automation Use Cases",
-                        "Presentation",
-                        "Intent",
-                        "Observability",
-                        "Orchestration",
-                        "Collector",
-                        "Executor",
-                        "Dependencies",
-                        "Staffing, Timeline, & Milestones",
-                        "Staffing Plan",
-                ):
-                    pattern = rf"(?ms)^##\s*{re.escape(heading)}\b.*?(?=^##\s|\Z)"
-                    _hl = re.sub(pattern, "", _hl)
-                _hl = _hl.strip()
-            except Exception:
-                pass
             context = {
                 "generated_timestamp": sdd_ts,
-                "highlights": _hl,
-                "my_role": final_payload.get("my_role", {}),
+                "highlights": summary_md,
                 "initiative": final_payload.get("initiative", {}),
+                "my_role": final_payload.get("my_role", {}),
+                "stakeholders": final_payload.get("stakeholders", {}),
                 "presentation": final_payload.get("presentation", {}),
                 "intent": final_payload.get("intent", {}),
                 "observability": final_payload.get("observability", {}),
@@ -3041,16 +3199,12 @@ def solution_wizard_main():
                 "executor": final_payload.get("executor", {}),
                 "dependencies": final_payload.get("dependencies", []),
                 "timeline": final_payload.get("timeline", {}),
-                "use_cases": final_payload.get("use_cases", []),
-                # If we include a PNG in the ZIP, the relative path in the archive is just the filename
-                "gantt_image_path": (
-                    "Gantt.png" if False else None
-                ),  # set after chart generation below
-                # Back-compat convenience
                 "staffing_plan": (final_payload.get("timeline", {}) or {}).get(
                     "staffing_plan_md", ""
                 ),
+                "gantt_image_path": None,
             }
+            sdd_template_env = (env, tmpl, context)
         except Exception:
             # Fallback minimal doc if template can't be loaded
             basic_doc = ["# Solution Design Document", f"Generated: {sdd_ts}"]
@@ -3058,9 +3212,6 @@ def solution_wizard_main():
                 basic_doc.append("## Highlights")
                 basic_doc.append(summary_md)
             sdd_doc_md = "\n\n".join(basic_doc).encode("utf-8")
-        else:
-            # Defer rendering until after we know if a PNG was produced to set gantt_image_path
-            sdd_template_env = (env, tmpl, context)
 
         # Rebuild a color Gantt chart from payload timeline
         gantt_png_bytes = None
@@ -3108,6 +3259,21 @@ def solution_wizard_main():
             st.info(
                 "Gantt PNG could not be generated. To include a PNG in the ZIP, install the 'kaleido' package (e.g., pip install -U kaleido) and rerun."
             )
+
+        # Define title for ZIP filenames
+        ini = final_payload.get("initiative", {}) or {}
+        _title = (ini.get("title") or "").strip()
+        title_for_zip = (
+                re.sub(r"[^A-Za-z0-9_-]+", "_", (_title or "solution")).strip("_")
+                or "solution"
+        )
+        ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        # Create JSON bytes for ZIP
+        final_json_bytes = json.dumps(final_payload, indent=2).encode("utf-8")
+
+        # Define ZIP filename
+        zip_name = f"naf_report_{title_for_zip}_{ts}.zip"
 
         # Create ZIP in-memory
         zip_buf = io.BytesIO()
@@ -3249,12 +3415,19 @@ def solution_wizard_main():
             ):
                 final_payload["initiative"] = {}
             final_payload_bytes = json.dumps(final_payload, indent=2).encode("utf-8")
-            ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            
+            # Define title for ZIP filenames
+            ini = final_payload.get("initiative", {}) or {}
+            _title = (ini.get("title") or "").strip()
             title_for_zip = (
                     re.sub(r"[^A-Za-z0-9_-]+", "_", (_title or "solution")).strip("_")
                     or "solution"
             )
+            ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            
+            # Define ZIP filename for minimal payload path
             zip_name = f"naf_report_{title_for_zip}_{ts}.zip"
+            
             zip_buf = io.BytesIO()
             with zipfile.ZipFile(
                     zip_buf, mode="w", compression=zipfile.ZIP_DEFLATED
