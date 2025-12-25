@@ -66,11 +66,10 @@ _join = utils.join_human
 
 # --- Module-level helper functions ---
 
+
 def _sorted_deps(items):
     """Sort dependency items by name and details for comparison."""
-    return sorted(
-        items, key=lambda x: (x.get("name") or "", x.get("details") or "")
-    )
+    return sorted(items, key=lambda x: (x.get("name") or "", x.get("details") or ""))
 
 
 def _has_list_selections(d: dict) -> bool:
@@ -167,9 +166,7 @@ def _has_any_content(p: dict) -> bool:
             for k in ("methods", "go_no_go", "additional_logic", "tools")
         )
         _orch_sel = (
-            (orch_narr.get("selections") or {})
-            if isinstance(orch_narr, dict)
-            else {}
+            (orch_narr.get("selections") or {}) if isinstance(orch_narr, dict) else {}
         )
         _orch_choice = (_orch_sel.get("choice") or "").strip()
         orch_flag = bool(
@@ -184,8 +181,12 @@ def _has_any_content(p: dict) -> bool:
         deps_flag = False
         if deps:
             deps_slim = [
-                {"name": (d or {}).get("name"), "details": (d or {}).get("details", "").strip()}
-                for d in deps if (d or {}).get("name")
+                {
+                    "name": (d or {}).get("name"),
+                    "details": (d or {}).get("details", "").strip(),
+                }
+                for d in deps
+                if (d or {}).get("name")
             ]
             default_deps = [
                 {"name": "Network Infrastructure", "details": ""},
@@ -206,10 +207,20 @@ def _has_any_content(p: dict) -> bool:
             ((my_role.get(k) or "").strip()) for k in ("who", "skills", "developer")
         )
 
-        return any([
-            pres_flag, intent_flag, obs_flag, orch_flag, coll_flag,
-            exec_flag, deps_flag, tl_flag, ini_flag, role_flag,
-        ])
+        return any(
+            [
+                pres_flag,
+                intent_flag,
+                obs_flag,
+                orch_flag,
+                coll_flag,
+                exec_flag,
+                deps_flag,
+                tl_flag,
+                ini_flag,
+                role_flag,
+            ]
+        )
     except Exception:
         pass
     return False
@@ -221,12 +232,12 @@ def _has_any_content(p: dict) -> bool:
 def solution_wizard_main():
     """
     Solution Wizard (NAF Framework) interactive page
-    
-    A comprehensive tool for designing network automation solutions using the 
+
+    A comprehensive tool for designing network automation solutions using the
     Network Automation Forum's Network Automation Framework (NAF).
-    
+
     Includes guided inputs for:
-    - Initiative: Title, description, category, problem statement, expected use, 
+    - Initiative: Title, description, category, problem statement, expected use,
       error conditions, assumptions, deployment strategy
     - Stakeholders: Who is supporting the project
     - My Role: Who is filling out the wizard and their skills
@@ -236,7 +247,7 @@ def solution_wizard_main():
     - Orchestration: Choice and details for workflow automation
     - Collector: Methods, authentication, handling, normalization, scale, tools
     - Executor: Methods for executing automation
-    
+
     Planning section:
     - "Staffing, Timeline, & Milestones" with:
       - Staffing fields (direct staff count and markdown-supported staffing plan)
@@ -245,23 +256,23 @@ def solution_wizard_main():
       - Business-day scheduling that skips weekends and optionally public holidays (via python-holidays)
       - Optional Plotly Gantt chart visualization
       - Summary callouts for expected delivery date (st.success) and approximate duration in months/years (st.info)
-    
+
     Dependencies section:
     - Add/remove network infrastructure dependencies
     - Default dependencies: Network Infrastructure, Revision Control system
-    
+
     Export functionality:
     - Download complete solution design as ZIP with JSON and Markdown files
     - Upload previously saved JSON to restore wizard state
     - Solution Design Document template with all sections
-    
+
     ==================================================================================
     STATE PERSISTENCE (LEGACY)
     ==================================================================================
     Previously used backing storage pattern for inter-page navigation.
     With single-page operation, widget state persists naturally.
     Legacy code marked for potential removal:
-    - "_wizard_data": dict storing scalar field values 
+    - "_wizard_data": dict storing scalar field values
     - "_wizard_checkboxes": dict storing checkbox/toggle states
 
     ==================================================================================
@@ -406,9 +417,9 @@ def solution_wizard_main():
 
         # Reset to defaults
         if st.button(
-                "Reset to defaults",
-                use_container_width=True,
-                key="wizard_reset_defaults_btn",
+            "Reset to defaults",
+            use_container_width=True,
+            key="wizard_reset_defaults_btn",
         ):
             prefixes = (
                 "pres_",
@@ -437,22 +448,22 @@ def solution_wizard_main():
             # Force-uncheck known checkbox/toggle keys in case Streamlit retains widget states
             for k in list(st.session_state.keys()):
                 if k.startswith(
-                        (
-                                "pres_user_",
-                                "pres_interact_",
-                                "pres_tool_",
-                                "pres_auth_",
-                                "intent_dev_",
-                                "intent_prov_",
-                                "obs_state_",
-                                "obs_tool_",
-                                "collector_method_",
-                                "collector_auth_",
-                                "collector_handle_",
-                                "collector_norm_",
-                                "collection_tool_",
-                                "collection_tools_",
-                        )
+                    (
+                        "pres_user_",
+                        "pres_interact_",
+                        "pres_tool_",
+                        "pres_auth_",
+                        "intent_dev_",
+                        "intent_prov_",
+                        "obs_state_",
+                        "obs_tool_",
+                        "collector_method_",
+                        "collector_auth_",
+                        "collector_handle_",
+                        "collector_norm_",
+                        "collection_tool_",
+                        "collection_tools_",
+                    )
                 ):
                     st.session_state[k] = False
             # Disable any custom enable toggles
@@ -528,7 +539,9 @@ def solution_wizard_main():
             st.session_state["_wizard_category_other"] = ""
             st.session_state["no_move_forward"] = ""
             # Set no_move_forward_reasons to placeholder for reset
-            st.session_state["no_move_forward_reasons"] = ["— Select one or more risks —"]
+            st.session_state["no_move_forward_reasons"] = [
+                "— Select one or more risks —"
+            ]
             # no separate details field; report is generated
             # Orchestration defaults so select resets visually
             st.session_state["orch_choice"] = "— Select one —"
@@ -552,9 +565,9 @@ def solution_wizard_main():
                 )
             else:
                 if st.button(
-                        "Apply uploaded JSON",
-                        type="primary",
-                        key="wizard_apply_upload_btn",
+                    "Apply uploaded JSON",
+                    type="primary",
+                    key="wizard_apply_upload_btn",
                 ):
                     try:
                         data = json.load(uploaded)
@@ -593,22 +606,22 @@ def solution_wizard_main():
                             # Force-uncheck known checkbox/toggle keys
                             for k in list(st.session_state.keys()):
                                 if k.startswith(
-                                        (
-                                                "pres_user_",
-                                                "pres_interact_",
-                                                "pres_tool_",
-                                                "pres_auth_",
-                                                "intent_dev_",
-                                                "intent_prov_",
-                                                "obs_state_",
-                                                "obs_tool_",
-                                                "collector_method_",
-                                                "collector_auth_",
-                                                "collector_handle_",
-                                                "collector_norm_",
-                                                "collection_tool_",
-                                                "collection_tools_",
-                                        )
+                                    (
+                                        "pres_user_",
+                                        "pres_interact_",
+                                        "pres_tool_",
+                                        "pres_auth_",
+                                        "intent_dev_",
+                                        "intent_prov_",
+                                        "obs_state_",
+                                        "obs_tool_",
+                                        "collector_method_",
+                                        "collector_auth_",
+                                        "collector_handle_",
+                                        "collector_norm_",
+                                        "collection_tool_",
+                                        "collection_tools_",
+                                    )
                                 ):
                                     st.session_state[k] = False
                             for k in [
@@ -668,8 +681,8 @@ def solution_wizard_main():
                                     ini.get("title") or ""
                                 )
                             if ini.get("description") is not None:
-                                st.session_state["_wizard_automation_description"] = str(
-                                    ini.get("description") or ""
+                                st.session_state["_wizard_automation_description"] = (
+                                    str(ini.get("description") or "")
                                 )
                             if ini.get("problem_statement") is not None:
                                 st.session_state["_wizard_problem_statement"] = str(
@@ -688,49 +701,85 @@ def solution_wizard_main():
                                     ini.get("assumptions") or ""
                                 )
                             if ini.get("deployment_strategy") is not None:
-                                deploy_strategy = str(ini.get("deployment_strategy") or "")
+                                deploy_strategy = str(
+                                    ini.get("deployment_strategy") or ""
+                                )
                                 # Check if the deployment strategy is in the predefined list
-                                deploy_yaml_path = Path(__file__).parent.parent / "deployment_strategies.yml"
+                                deploy_yaml_path = (
+                                    Path(__file__).parent.parent
+                                    / "deployment_strategies.yml"
+                                )
                                 try:
                                     with open(deploy_yaml_path, "r") as f:
                                         deploy_data = yaml.safe_load(f)
-                                    deploy_options = list(deploy_data.keys()) if deploy_data else []
+                                    deploy_options = (
+                                        list(deploy_data.keys()) if deploy_data else []
+                                    )
                                 except Exception:
                                     deploy_options = []
-                                
+
                                 if deploy_strategy in deploy_options:
                                     # It's a standard strategy
-                                    st.session_state["_wizard_deployment_strategy"] = deploy_strategy
-                                    st.session_state["_wizard_deployment_strategy_other"] = ""
-                                elif deploy_strategy and deploy_strategy != DEFAULT_DEPLOYMENT_STRATEGY_PLACEHOLDER:
+                                    st.session_state["_wizard_deployment_strategy"] = (
+                                        deploy_strategy
+                                    )
+                                    st.session_state[
+                                        "_wizard_deployment_strategy_other"
+                                    ] = ""
+                                elif (
+                                    deploy_strategy
+                                    and deploy_strategy
+                                    != DEFAULT_DEPLOYMENT_STRATEGY_PLACEHOLDER
+                                ):
                                     # It's a custom strategy, put it in "Other"
-                                    st.session_state["_wizard_deployment_strategy"] = "Other"
-                                    st.session_state["_wizard_deployment_strategy_other"] = deploy_strategy
+                                    st.session_state["_wizard_deployment_strategy"] = (
+                                        "Other"
+                                    )
+                                    st.session_state[
+                                        "_wizard_deployment_strategy_other"
+                                    ] = deploy_strategy
                                 else:
                                     # Empty or placeholder
-                                    st.session_state["_wizard_deployment_strategy"] = DEFAULT_DEPLOYMENT_STRATEGY_PLACEHOLDER
-                                    st.session_state["_wizard_deployment_strategy_other"] = ""
+                                    st.session_state["_wizard_deployment_strategy"] = (
+                                        DEFAULT_DEPLOYMENT_STRATEGY_PLACEHOLDER
+                                    )
+                                    st.session_state[
+                                        "_wizard_deployment_strategy_other"
+                                    ] = ""
                             if ini.get("deployment_strategy_description") is not None:
-                                st.session_state["_wizard_deployment_strategy_description"] = str(
+                                st.session_state[
+                                    "_wizard_deployment_strategy_description"
+                                ] = str(
                                     ini.get("deployment_strategy_description") or ""
                                 )
                             if ini.get("category") is not None:
                                 # Check if the category is in the predefined list
-                                yaml_path = Path(__file__).parent.parent / "use_case_categories.yml"
+                                yaml_path = (
+                                    Path(__file__).parent.parent
+                                    / "use_case_categories.yml"
+                                )
                                 try:
                                     with open(yaml_path, "r") as f:
                                         categories_data = yaml.safe_load(f)
-                                    category_options = list(categories_data.keys()) if categories_data else []
+                                    category_options = (
+                                        list(categories_data.keys())
+                                        if categories_data
+                                        else []
+                                    )
                                 except Exception:
                                     category_options = []
-                                
+
                                 category_value = ini.get("category")
                                 if category_value in category_options:
-                                    st.session_state["_wizard_category"] = category_value
+                                    st.session_state["_wizard_category"] = (
+                                        category_value
+                                    )
                                     st.session_state["_wizard_category_other"] = ""
                                 else:
                                     st.session_state["_wizard_category"] = "Other"
-                                    st.session_state["_wizard_category_other"] = category_value or ""
+                                    st.session_state["_wizard_category_other"] = (
+                                        category_value or ""
+                                    )
                             if ini.get("out_of_scope") is not None:
                                 st.session_state["_wizard_out_of_scope"] = str(
                                     ini.get("out_of_scope") or ""
@@ -763,9 +812,7 @@ def solution_wizard_main():
                                 if who in known_who:
                                     st.session_state["my_role_who"] = who
                                 else:
-                                    st.session_state["my_role_who"] = (
-                                        "Other (fill in)"
-                                    )
+                                    st.session_state["my_role_who"] = "Other (fill in)"
                                     st.session_state["my_role_who_other"] = who
                             if skills:
                                 known_sk = {
@@ -779,9 +826,7 @@ def solution_wizard_main():
                                     st.session_state["my_role_skills"] = (
                                         "Other (fill in)"
                                     )
-                                    st.session_state["my_role_skills_other"] = (
-                                        skills
-                                    )
+                                    st.session_state["my_role_skills_other"] = skills
                             if dev:
                                 known_dev = {
                                     "I’ll do it myself.",
@@ -791,9 +836,7 @@ def solution_wizard_main():
                                 if dev in known_dev:
                                     st.session_state["my_role_dev"] = dev
                                 else:
-                                    st.session_state["my_role_dev"] = (
-                                        "Other (fill in)"
-                                    )
+                                    st.session_state["my_role_dev"] = "Other (fill in)"
                                     st.session_state["my_role_dev_other"] = dev
 
                             # Stakeholders
@@ -809,7 +852,9 @@ def solution_wizard_main():
                             else:
                                 st.session_state["stakeholders_choices"] = {}
                             if stakeholders.get("other") is not None:
-                                st.session_state["stakeholders_other_text"] = str(stakeholders.get("other") or "")
+                                st.session_state["stakeholders_other_text"] = str(
+                                    stakeholders.get("other") or ""
+                                )
 
                             # Presentation
                             pres = data.get("presentation", {}) or {}
@@ -821,9 +866,9 @@ def solution_wizard_main():
                                 if it in known_interact:
                                     st.session_state[f"pres_interact_{it}"] = True
                                 else:
-                                    st.session_state[
-                                        "pres_interact_custom_enable"
-                                    ] = True
+                                    st.session_state["pres_interact_custom_enable"] = (
+                                        True
+                                    )
                                     st.session_state["pres_interact_custom"] = it
                             known_tools = {
                                 "Python",
@@ -838,9 +883,7 @@ def solution_wizard_main():
                                 if t in known_tools:
                                     st.session_state[f"pres_tool_{t}"] = True
                                 else:
-                                    st.session_state["pres_tool_custom_enable"] = (
-                                        True
-                                    )
+                                    st.session_state["pres_tool_custom_enable"] = True
                                     st.session_state["pres_tool_custom"] = t
                             known_auth = {
                                 "No Authentication (suitable only for demos and very specific use cases)",
@@ -852,9 +895,7 @@ def solution_wizard_main():
                                 if a in known_auth:
                                     st.session_state[f"pres_auth_{a}"] = True
                                 else:
-                                    st.session_state["pres_auth_other_enable"] = (
-                                        True
-                                    )
+                                    st.session_state["pres_auth_other_enable"] = True
                                     st.session_state["pres_auth_other_text"] = a
 
                             # Intent
@@ -929,8 +970,8 @@ def solution_wizard_main():
                                 else "No"
                             )
                             if obs_sel.get("additional_logic_text") is not None:
-                                st.session_state["obs_add_logic_text"] = (
-                                    obs_sel.get("additional_logic_text")
+                                st.session_state["obs_add_logic_text"] = obs_sel.get(
+                                    "additional_logic_text"
                                 )
 
                             # Orchestration
@@ -938,12 +979,10 @@ def solution_wizard_main():
                                 "selections", {}
                             )
                             if orch_sel.get("choice") is not None:
-                                st.session_state["orch_choice"] = orch_sel.get(
-                                    "choice"
-                                )
+                                st.session_state["orch_choice"] = orch_sel.get("choice")
                             if orch_sel.get("details") is not None:
-                                st.session_state["orch_details_text"] = (
-                                    orch_sel.get("details")
+                                st.session_state["orch_details_text"] = orch_sel.get(
+                                    "details"
                                 )
 
                             # Collector
@@ -980,14 +1019,14 @@ def solution_wizard_main():
                                     "mTLS",
                                 ]:
                                     if a == known:
-                                        st.session_state[
-                                            f"collector_auth_{known}"
-                                        ] = True
+                                        st.session_state[f"collector_auth_{known}"] = (
+                                            True
+                                        )
                                         break
                                 else:
-                                    st.session_state[
-                                        "collector_auth_other_enable"
-                                    ] = True
+                                    st.session_state["collector_auth_other_enable"] = (
+                                        True
+                                    )
                                     st.session_state["collector_auth_other"] = a
                             for h in col_sel.get("handling", []) or []:
                                 for known in [
@@ -1016,14 +1055,14 @@ def solution_wizard_main():
                                     "Schema mapping",
                                 ]:
                                     if n == known:
-                                        st.session_state[
-                                            f"collector_norm_{known}"
-                                        ] = True
+                                        st.session_state[f"collector_norm_{known}"] = (
+                                            True
+                                        )
                                         break
                                 else:
-                                    st.session_state[
-                                        "collector_norm_other_enable"
-                                    ] = True
+                                    st.session_state["collector_norm_other_enable"] = (
+                                        True
+                                    )
                                     st.session_state["collector_norm_other"] = n
                             for t in col_sel.get("tools", []) or []:
                                 for known in [
@@ -1034,9 +1073,9 @@ def solution_wizard_main():
                                     "Custom Python Scripts",
                                 ]:
                                     if t == known:
-                                        st.session_state[
-                                            f"collection_tool_{known}"
-                                        ] = True
+                                        st.session_state[f"collection_tool_{known}"] = (
+                                            True
+                                        )
                                         break
                                 else:
                                     st.session_state[
@@ -1097,14 +1136,14 @@ def solution_wizard_main():
                                 if key:
                                     st.session_state[f"dep_{key}"] = True
                                     if details:
-                                        st.session_state[f"dep_{key}_details"] = (
-                                            details
-                                        )
+                                        st.session_state[f"dep_{key}_details"] = details
 
                             # Timeline basics
                             tl = data.get("timeline", {}) or {}
                             if tl.get("build_buy") is not None:
-                                st.session_state["timeline_build_buy"] = tl.get("build_buy")
+                                st.session_state["timeline_build_buy"] = tl.get(
+                                    "build_buy"
+                                )
                             if tl.get("staff_count") is not None:
                                 st.session_state["timeline_staff_count"] = int(
                                     tl.get("staff_count") or 0
@@ -1119,7 +1158,7 @@ def solution_wizard_main():
                                 )
                             if tl.get("holiday_region") is not None:
                                 st.session_state["timeline_holiday_region"] = (
-                                        tl.get("holiday_region") or "None"
+                                    tl.get("holiday_region") or "None"
                                 )
                             if tl.get("start_date"):
                                 parsed = None
@@ -1142,17 +1181,20 @@ def solution_wizard_main():
                             if isinstance(items, list) and items:
                                 # Clear existing row-level timeline widget keys so widgets adopt new values
                                 for k in list(st.session_state.keys()):
-                                    if k.startswith(("_tl_name_", "_tl_duration_", "_tl_notes_", "_tl_del_")):
+                                    if k.startswith(
+                                        (
+                                            "_tl_name_",
+                                            "_tl_duration_",
+                                            "_tl_notes_",
+                                            "_tl_del_",
+                                        )
+                                    ):
                                         st.session_state.pop(k, None)
                                 ms = []
                                 for it in items:
                                     try:
-                                        nm = str(
-                                            (it or {}).get("name") or ""
-                                        ).strip()
-                                        dur = int(
-                                            (it or {}).get("duration_bd") or 0
-                                        )
+                                        nm = str((it or {}).get("name") or "").strip()
+                                        dur = int((it or {}).get("duration_bd") or 0)
                                         notes = str((it or {}).get("notes") or "")
                                     except Exception:
                                         nm, dur, notes = (
@@ -1171,59 +1213,137 @@ def solution_wizard_main():
                                     st.session_state["timeline_milestones"] = ms
                                     # Seed row-level widget keys to reflect uploaded values
                                     for i, r in enumerate(ms):
-                                        st.session_state[f"_tl_name_{i}"] = r.get("name", "")
-                                        st.session_state[f"_tl_duration_{i}"] = int(r.get("duration", 0))
-                                        st.session_state[f"_tl_notes_{i}"] = r.get("notes", "")
+                                        st.session_state[f"_tl_name_{i}"] = r.get(
+                                            "name", ""
+                                        )
+                                        st.session_state[f"_tl_duration_{i}"] = int(
+                                            r.get("duration", 0)
+                                        )
+                                        st.session_state[f"_tl_notes_{i}"] = r.get(
+                                            "notes", ""
+                                        )
 
                             # LEGACY: Store all wizard data in backing storage for inter-page navigation
                             # No longer needed with single-page operation
                             # TODO: Remove this entirely after confirming stability
                             st.session_state["_wizard_data"] = {
                                 "my_role_who": st.session_state.get("my_role_who"),
-                                "my_role_skills": st.session_state.get("my_role_skills"),
+                                "my_role_skills": st.session_state.get(
+                                    "my_role_skills"
+                                ),
                                 "my_role_dev": st.session_state.get("my_role_dev"),
-                                "my_role_who_other": st.session_state.get("my_role_who_other"),
-                                "my_role_skills_other": st.session_state.get("my_role_skills_other"),
-                                "my_role_dev_other": st.session_state.get("my_role_dev_other"),
-                                "stakeholders_choices": st.session_state.get("stakeholders_choices"),
-                                "stakeholders_other_text": st.session_state.get("stakeholders_other_text"),
+                                "my_role_who_other": st.session_state.get(
+                                    "my_role_who_other"
+                                ),
+                                "my_role_skills_other": st.session_state.get(
+                                    "my_role_skills_other"
+                                ),
+                                "my_role_dev_other": st.session_state.get(
+                                    "my_role_dev_other"
+                                ),
+                                "stakeholders_choices": st.session_state.get(
+                                    "stakeholders_choices"
+                                ),
+                                "stakeholders_other_text": st.session_state.get(
+                                    "stakeholders_other_text"
+                                ),
                                 "orch_choice": st.session_state.get("orch_choice"),
-                                "orch_details_text": st.session_state.get("orch_details_text"),
-                                "_wizard_automation_title": st.session_state.get("_wizard_automation_title"),
-                                "_wizard_automation_description": st.session_state.get("_wizard_automation_description"),
-                                "_wizard_category": st.session_state.get("_wizard_category"),
-                                "_wizard_category_other": st.session_state.get("_wizard_category_other"),
-                                "_wizard_problem_statement": st.session_state.get("_wizard_problem_statement"),
-                                "_wizard_expected_use": st.session_state.get("_wizard_expected_use"),
-                                "_wizard_error_conditions": st.session_state.get("_wizard_error_conditions"),
-                                "_wizard_assumptions": st.session_state.get("_wizard_assumptions"),
-                                "_wizard_deployment_strategy": st.session_state.get("_wizard_deployment_strategy"),
-                                "_wizard_deployment_strategy_other": st.session_state.get("_wizard_deployment_strategy_other"),
-                                "_wizard_deployment_strategy_description": st.session_state.get("_wizard_deployment_strategy_description"),
-                                "_wizard_out_of_scope": st.session_state.get("_wizard_out_of_scope"),
-                                "no_move_forward": st.session_state.get("no_move_forward"),
-                                "no_move_forward_reasons": st.session_state.get("no_move_forward_reasons"),
+                                "orch_details_text": st.session_state.get(
+                                    "orch_details_text"
+                                ),
+                                "_wizard_automation_title": st.session_state.get(
+                                    "_wizard_automation_title"
+                                ),
+                                "_wizard_automation_description": st.session_state.get(
+                                    "_wizard_automation_description"
+                                ),
+                                "_wizard_category": st.session_state.get(
+                                    "_wizard_category"
+                                ),
+                                "_wizard_category_other": st.session_state.get(
+                                    "_wizard_category_other"
+                                ),
+                                "_wizard_problem_statement": st.session_state.get(
+                                    "_wizard_problem_statement"
+                                ),
+                                "_wizard_expected_use": st.session_state.get(
+                                    "_wizard_expected_use"
+                                ),
+                                "_wizard_error_conditions": st.session_state.get(
+                                    "_wizard_error_conditions"
+                                ),
+                                "_wizard_assumptions": st.session_state.get(
+                                    "_wizard_assumptions"
+                                ),
+                                "_wizard_deployment_strategy": st.session_state.get(
+                                    "_wizard_deployment_strategy"
+                                ),
+                                "_wizard_deployment_strategy_other": st.session_state.get(
+                                    "_wizard_deployment_strategy_other"
+                                ),
+                                "_wizard_deployment_strategy_description": st.session_state.get(
+                                    "_wizard_deployment_strategy_description"
+                                ),
+                                "_wizard_out_of_scope": st.session_state.get(
+                                    "_wizard_out_of_scope"
+                                ),
+                                "no_move_forward": st.session_state.get(
+                                    "no_move_forward"
+                                ),
+                                "no_move_forward_reasons": st.session_state.get(
+                                    "no_move_forward_reasons"
+                                ),
                                 "obs_go_no_go": st.session_state.get("obs_go_no_go"),
-                                "obs_add_logic_choice": st.session_state.get("obs_add_logic_choice"),
-                                "obs_add_logic_text": st.session_state.get("obs_add_logic_text"),
-                                "collector_devices": st.session_state.get("collector_devices"),
-                                "collector_metrics": st.session_state.get("collector_metrics"),
-                                "collector_cadence": st.session_state.get("collector_cadence"),
+                                "obs_add_logic_choice": st.session_state.get(
+                                    "obs_add_logic_choice"
+                                ),
+                                "obs_add_logic_text": st.session_state.get(
+                                    "obs_add_logic_text"
+                                ),
+                                "collector_devices": st.session_state.get(
+                                    "collector_devices"
+                                ),
+                                "collector_metrics": st.session_state.get(
+                                    "collector_metrics"
+                                ),
+                                "collector_cadence": st.session_state.get(
+                                    "collector_cadence"
+                                ),
                             }
                             # Also store all checkbox and widget states that need to persist
-                            widget_keys = [k for k in st.session_state.keys() if any(
-                                k.startswith(p) for p in (
-                                    "pres_user_", "pres_interact_", "pres_tool_", "pres_auth_",
-                                    "intent_dev_", "intent_prov_",
-                                    "obs_state_", "obs_tool_",
-                                    "collector_method_", "collector_auth_", "collector_handle_", "collector_norm_",
-                                    "collection_tool_", "collection_tools_", "collector_methods_", "collector_handling_",
-                                    "exec_", "dep_",
-                                    "_tl_", "_timeline_"
+                            widget_keys = [
+                                k
+                                for k in st.session_state.keys()
+                                if any(
+                                    k.startswith(p)
+                                    for p in (
+                                        "pres_user_",
+                                        "pres_interact_",
+                                        "pres_tool_",
+                                        "pres_auth_",
+                                        "intent_dev_",
+                                        "intent_prov_",
+                                        "obs_state_",
+                                        "obs_tool_",
+                                        "collector_method_",
+                                        "collector_auth_",
+                                        "collector_handle_",
+                                        "collector_norm_",
+                                        "collection_tool_",
+                                        "collection_tools_",
+                                        "collector_methods_",
+                                        "collector_handling_",
+                                        "exec_",
+                                        "dep_",
+                                        "_tl_",
+                                        "_timeline_",
+                                    )
                                 )
-                            )]
-                            st.session_state["_wizard_checkboxes"] = {k: st.session_state.get(k) for k in widget_keys}
-                            
+                            ]
+                            st.session_state["_wizard_checkboxes"] = {
+                                k: st.session_state.get(k) for k in widget_keys
+                            }
+
                             # Mark that JSON was loaded (for debugging/verification)
                             st.session_state["_json_loaded"] = True
                             st.success(
@@ -1244,7 +1364,7 @@ def solution_wizard_main():
         for key, value in wd.items():
             if value is not None and key not in st.session_state:
                 st.session_state[key] = value
-    
+
     if "_wizard_checkboxes" in st.session_state:
         wc = st.session_state["_wizard_checkboxes"]
         for key, value in wc.items():
@@ -1295,15 +1415,17 @@ def solution_wizard_main():
 
     # Automation Project Title & Short Description
     with st.expander(
-            "Automation Project Problem Statement & Description (Why is this Automation needed?)",
-            expanded=False,
+        "Automation Project Problem Statement & Description (Why is this Automation needed?)",
+        expanded=False,
     ):
         # Includes title, short description/scope, expected use, out of scope, and detailed description.
 
         # Initialize defaults - use _wizard_ keys directly as widget keys
         # When JSON is uploaded, these keys are cleared and reset, so widgets pick up new values
         if "_wizard_automation_title" not in st.session_state:
-            st.session_state["_wizard_automation_title"] = "My new network automation project"
+            st.session_state["_wizard_automation_title"] = (
+                "My new network automation project"
+            )
         if "_wizard_automation_description" not in st.session_state:
             st.session_state["_wizard_automation_description"] = (
                 "Here is a short description of my my new network automation project"
@@ -1361,9 +1483,11 @@ def solution_wizard_main():
         cat = st.selectbox(
             "Category",
             options=category_options_with_placeholder,
-            index=category_options_with_placeholder.index(current_cat)
-            if current_cat in category_options_with_placeholder
-            else 0,
+            index=(
+                category_options_with_placeholder.index(current_cat)
+                if current_cat in category_options_with_placeholder
+                else 0
+            ),
             key="_wizard_category",
             help=(
                 "Select a category from the list. Choose 'Other' if your initiative "
@@ -1376,9 +1500,12 @@ def solution_wizard_main():
         elif cat == "Other":
             cat_other = st.text_input(
                 "Custom category",
-                value=st.session_state.get("_wizard_category_other", "")
-                if st.session_state.get("_wizard_category", "") not in category_options
-                else "",
+                value=(
+                    st.session_state.get("_wizard_category_other", "")
+                    if st.session_state.get("_wizard_category", "")
+                    not in category_options
+                    else ""
+                ),
                 key="_wizard_category_other",
             )
             initiative_category = cat_other or cat
@@ -1430,38 +1557,44 @@ def solution_wizard_main():
             deploy_options = []
         # Add placeholder and "Other" options
         deploy_placeholder = DEFAULT_DEPLOYMENT_STRATEGY_PLACEHOLDER
-        deploy_options_with_placeholder = [deploy_placeholder] + deploy_options + ["Other"]
-        
+        deploy_options_with_placeholder = (
+            [deploy_placeholder] + deploy_options + ["Other"]
+        )
+
         # Initialize the session state if not set
         if "_wizard_deployment_strategy" not in st.session_state:
             st.session_state["_wizard_deployment_strategy"] = deploy_placeholder
         if "_wizard_deployment_strategy_other" not in st.session_state:
             st.session_state["_wizard_deployment_strategy_other"] = ""
-        
-        current_deploy = st.session_state.get("_wizard_deployment_strategy", deploy_placeholder)
+
+        current_deploy = st.session_state.get(
+            "_wizard_deployment_strategy", deploy_placeholder
+        )
         if current_deploy not in deploy_options_with_placeholder:
             # If the current value is not in the list, move it to "Other"
             st.session_state["_wizard_deployment_strategy_other"] = current_deploy
             current_deploy = "Other"
             st.session_state["_wizard_deployment_strategy"] = "Other"
-        
+
         deploy_sel = st.selectbox(
             "Standard Deployment Strategy",
             options=deploy_options_with_placeholder,
-            index=deploy_options_with_placeholder.index(current_deploy)
-            if current_deploy in deploy_options_with_placeholder
-            else 0,
+            index=(
+                deploy_options_with_placeholder.index(current_deploy)
+                if current_deploy in deploy_options_with_placeholder
+                else 0
+            ),
             key="_wizard_deployment_strategy",
             help="Select a standard deployment strategy from the list or choose 'Other' to enter a custom strategy.",
         )
-        
+
         # Show text input if "Other" is selected
         if deploy_sel == "Other":
             st.text_input(
                 "Custom Deployment Strategy",
                 key="_wizard_deployment_strategy_other",
                 help="Enter your custom deployment strategy name.",
-                placeholder="e.g., Pilot Program"
+                placeholder="e.g., Pilot Program",
             )
         elif deploy_sel == deploy_placeholder:
             st.info("💡 Please select a deployment strategy from the list above.")
@@ -1481,27 +1614,31 @@ def solution_wizard_main():
             "We will continue to pay for 3rd party support for this task",
             "This task will continue to be executed individually in an inconsistent and ad-hoc manner with varying degrees of success and documentation",
             "This task will continue to take far longer than it should resulting in poor customer satisfaction",
-            "We risk continuing to add technical debt to the logical infrastructure"
+            "We risk continuing to add technical debt to the logical infrastructure",
         ]
 
         # Initialize default if not set (widget key is set directly during JSON upload)
         if "no_move_forward_reasons" not in st.session_state:
-            st.session_state["no_move_forward_reasons"] = ["— Select one or more risks —"]
+            st.session_state["no_move_forward_reasons"] = [
+                "— Select one or more risks —"
+            ]
 
         # Add placeholder as first option
         risk_placeholder = "— Select one or more risks —"
         risk_options_with_placeholder = [risk_placeholder] + standard_reasons
-        
+
         no_move_forward_reasons = st.multiselect(
             "Risk of not doing the automation",
             options=risk_options_with_placeholder,
             key="no_move_forward_reasons",
             help="Select at least one standard reason that applies.",
         )
-        
+
         # Remove placeholder if selected
         if risk_placeholder in no_move_forward_reasons:
-            no_move_forward_reasons = [x for x in no_move_forward_reasons if x != risk_placeholder]
+            no_move_forward_reasons = [
+                x for x in no_move_forward_reasons if x != risk_placeholder
+            ]
 
         # Show warning if no standard reasons selected
         if not no_move_forward_reasons:
@@ -1518,10 +1655,14 @@ def solution_wizard_main():
         )
 
         # Get the actual deployment strategy value
-        actual_deployment_strategy = st.session_state.get("_wizard_deployment_strategy", "")
+        actual_deployment_strategy = st.session_state.get(
+            "_wizard_deployment_strategy", ""
+        )
         if actual_deployment_strategy == "Other":
-            actual_deployment_strategy = st.session_state.get("_wizard_deployment_strategy_other", "")
-        
+            actual_deployment_strategy = st.session_state.get(
+                "_wizard_deployment_strategy_other", ""
+            )
+
         # DUPLICATE: This payload building logic is now handled by wizard_data.build_wizard_payload()
         # TODO: Consider replacing this with a call to wizard_data.build_wizard_payload(st.session_state)
         payload["initiative"] = {
@@ -1532,8 +1673,14 @@ def solution_wizard_main():
             "expected_use": st.session_state.get("_wizard_expected_use", ""),
             "error_conditions": st.session_state.get("_wizard_error_conditions", ""),
             "assumptions": st.session_state.get("_wizard_assumptions", ""),
-            "deployment_strategy": actual_deployment_strategy if actual_deployment_strategy != DEFAULT_DEPLOYMENT_STRATEGY_PLACEHOLDER else "",
-            "deployment_strategy_description": st.session_state.get("_wizard_deployment_strategy_description", ""),
+            "deployment_strategy": (
+                actual_deployment_strategy
+                if actual_deployment_strategy != DEFAULT_DEPLOYMENT_STRATEGY_PLACEHOLDER
+                else ""
+            ),
+            "deployment_strategy_description": st.session_state.get(
+                "_wizard_deployment_strategy_description", ""
+            ),
             "out_of_scope": st.session_state.get("_wizard_out_of_scope", ""),
             "no_move_forward": no_move_forward,
             "no_move_forward_reasons": no_move_forward_reasons,
@@ -1619,7 +1766,7 @@ def solution_wizard_main():
         st.markdown("---")
         st.header("Stakeholders")
         if "stakeholders_choices" not in st.session_state or not isinstance(
-                st.session_state.get("stakeholders_choices"), dict
+            st.session_state.get("stakeholders_choices"), dict
         ):
             st.session_state["stakeholders_choices"] = {}
         if "stakeholders_other_text" not in st.session_state:
@@ -1644,14 +1791,20 @@ def solution_wizard_main():
             key = f"stakeholders_choice_{_sanitize_title(cat)}"
             # Initialize from restored choices if available
             if key not in st.session_state and cat in choices:
-                st.session_state[key] = choices[cat] if choices[cat] else SENTINEL_SELECT
+                st.session_state[key] = (
+                    choices[cat] if choices[cat] else SENTINEL_SELECT
+                )
             elif key not in st.session_state:
                 st.session_state[key] = SENTINEL_SELECT
             select_opts = [SENTINEL_SELECT] + [str(o) for o in opts if str(o).strip()]
             # Calculate the correct index based on the current value
             current_value = st.session_state.get(key, SENTINEL_SELECT)
             try:
-                index = select_opts.index(current_value) if current_value in select_opts else 0
+                index = (
+                    select_opts.index(current_value)
+                    if current_value in select_opts
+                    else 0
+                )
             except ValueError:
                 index = 0
             st.selectbox(
@@ -1713,7 +1866,9 @@ def solution_wizard_main():
             )
 
     utils.thick_hr(color=hr_color_dict["naf_yellow"], thickness=5)
-    st.markdown("***Expand each section to work through the framework components.  The NAF Framework will help define how your automation will work.***")
+    st.markdown(
+        "***Expand each section to work through the framework components.  The NAF Framework will help define how your automation will work.***"
+    )
 
     # Presentation section
     with st.expander("Presentation", expanded=False):
@@ -1754,8 +1909,14 @@ def solution_wizard_main():
 
         st.subheader("How will your users interact with your solution?")
         cols2 = st.columns(3)
-        interact_opts = ["CLI", "Purpose-built Web GUI", "Other GUI", "API", "Commercial Product/GUI",
-                         "Open Source Product/GUI"]
+        interact_opts = [
+            "CLI",
+            "Purpose-built Web GUI",
+            "Other GUI",
+            "API",
+            "Commercial Product/GUI",
+            "Open Source Product/GUI",
+        ]
         interact_checks = {}
         for i, opt in enumerate(interact_opts):
             with cols2[i % 3]:
@@ -2617,7 +2778,11 @@ def solution_wizard_main():
         )
 
         # Build/Buy/Hybrid selection
-        build_buy_options = ["Build In-House", "Build with Professional Services or other external resources (Buy)", "Hybrid"]
+        build_buy_options = [
+            "Build In-House",
+            "Build with Professional Services or other external resources (Buy)",
+            "Hybrid",
+        ]
         if "timeline_build_buy" not in st.session_state:
             st.session_state["timeline_build_buy"] = "Build In-House"
         build_buy_choice = st.radio(
@@ -2649,7 +2814,9 @@ def solution_wizard_main():
                 key="_timeline_external_staff_count",
                 help="Number of external staff working on project (e.g., staff augmentation or professional services engagement).",
             )
-            st.session_state["timeline_external_staff_count"] = int(external_staff_count)
+            st.session_state["timeline_external_staff_count"] = int(
+                external_staff_count
+            )
         with col_sp3:
             staffing_plan = st.text_area(
                 "Staffing plan (markdown supported)",
@@ -2671,7 +2838,9 @@ def solution_wizard_main():
         ]
         # Initialize if not set
         if "_timeline_holiday_region" not in st.session_state:
-            st.session_state["_timeline_holiday_region"] = st.session_state.get("timeline_holiday_region", "None")
+            st.session_state["_timeline_holiday_region"] = st.session_state.get(
+                "timeline_holiday_region", "None"
+            )
         holiday_region = st.selectbox(
             "Holiday calendar",
             options=region_options,
@@ -2877,7 +3046,9 @@ def solution_wizard_main():
             ),
             "build_buy": st.session_state.get("timeline_build_buy", "Build In-House"),
             "staff_count": int(st.session_state.get("timeline_staff_count", 0)),
-            "external_staff_count": int(st.session_state.get("timeline_external_staff_count", 0)),
+            "external_staff_count": int(
+                st.session_state.get("timeline_external_staff_count", 0)
+            ),
             "staffing_plan_md": st.session_state.get("timeline_staffing_plan", ""),
             "holiday_region": holiday_region,
             "items": [
@@ -2949,13 +3120,13 @@ def solution_wizard_main():
         )
         orch_sel = (payload.get("orchestration", {}) or {}).get("selections", {}) or {}
         orch_choice = (orch_sel.get("choice") or "").strip() or (
-                st.session_state.get("orch_choice") or ""
+            st.session_state.get("orch_choice") or ""
         ).strip()
         orch_details = (orch_sel.get("details") or "").strip()
         # Treat any non-sentinel choice (including 'No') as a meaningful change for gating
         orch_nondefault = bool(orch_choice and orch_choice != "— Select one —")
         if not (
-                has_any_selection or ini_nondefault or orch_nondefault or role_nonempty
+            has_any_selection or ini_nondefault or orch_nondefault or role_nonempty
         ):
             st.info(
                 "Start filling in the sections above to see Solution Highlights here. Once you provide inputs, you will also be able to download the Wizard JSON."
@@ -3099,9 +3270,7 @@ def solution_wizard_main():
 
         summary_md = ("".join(summary_parts)).strip()
         if summary_md:
-            with st.expander(
-                    "Detailed solution description (Preview)", expanded=False
-            ):
+            with st.expander("Detailed solution description (Preview)", expanded=False):
                 """
                 Live preview of the report that will be written into the ZIP (naf_report_*.md).
                 """
@@ -3116,7 +3285,7 @@ def solution_wizard_main():
         final_payload = dict(payload) if isinstance(payload, dict) else {}
         # Ensure initiative exists (without solution_details_md)
         if "initiative" not in final_payload or not isinstance(
-                final_payload.get("initiative"), dict
+            final_payload.get("initiative"), dict
         ):
             final_payload["initiative"] = {}
 
@@ -3330,8 +3499,8 @@ def solution_wizard_main():
         ini = final_payload.get("initiative", {}) or {}
         _title = (ini.get("title") or "").strip()
         title_for_zip = (
-                re.sub(r"[^A-Za-z0-9_-]+", "_", (_title or "solution")).strip("_")
-                or "solution"
+            re.sub(r"[^A-Za-z0-9_-]+", "_", (_title or "solution")).strip("_")
+            or "solution"
         )
         ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -3368,7 +3537,7 @@ def solution_wizard_main():
                 # If earlier fallback created sdd_doc_md, use it; else create a minimal fallback now
                 if "sdd_doc_md" not in locals():
                     sdd_doc_md = (
-                            "# Solution Design Document\n\n" + f"Generated: {sdd_ts}"
+                        "# Solution Design Document\n\n" + f"Generated: {sdd_ts}"
                     ).encode("utf-8")
             zf.writestr(md_name, sdd_doc_md)
             if gantt_png_bytes:
@@ -3380,7 +3549,7 @@ def solution_wizard_main():
             # Include branding icon if available so Markdown image resolves
             try:
                 icon_path = (
-                        Path(__file__).parent.parent / "images" / "naf_icon.png"
+                    Path(__file__).parent.parent / "images" / "naf_icon.png"
                 ).resolve()
                 if icon_path.exists():
                     with open(icon_path, "rb") as f:
@@ -3405,7 +3574,7 @@ def solution_wizard_main():
         )
 
         has_any_selection = (
-                any(_has_list_selections(v) for v in sel.values()) or role_nonempty
+            any(_has_list_selections(v) for v in sel.values()) or role_nonempty
         )
         ini = payload.get("initiative", {}) or {}
         default_title = DEFAULT_TITLE
@@ -3417,7 +3586,7 @@ def solution_wizard_main():
         )
         orch_sel = (payload.get("orchestration", {}) or {}).get("selections", {}) or {}
         orch_choice = (orch_sel.get("choice") or "").strip() or (
-                st.session_state.get("orch_choice") or ""
+            st.session_state.get("orch_choice") or ""
         ).strip()
         orch_details = (orch_sel.get("details") or "").strip()
         # Treat any non-sentinel choice (including 'No') as a meaningful change for gating
@@ -3464,35 +3633,35 @@ def solution_wizard_main():
         )
         orch_sel = (payload.get("orchestration", {}) or {}).get("selections", {}) or {}
         orch_choice = (orch_sel.get("choice") or "").strip() or (
-                st.session_state.get("orch_choice") or ""
+            st.session_state.get("orch_choice") or ""
         ).strip()
         orch_nondefault = bool(orch_choice and orch_choice != "— Select one —")
         if orch_nondefault and not (
-                has_any_selection or ini_nondefault or role_nonempty
+            has_any_selection or ini_nondefault or role_nonempty
         ):
             # Minimal payload & ZIP (JSON + minimal MD)
             final_payload = dict(payload) if isinstance(payload, dict) else {}
             if "initiative" not in final_payload or not isinstance(
-                    final_payload.get("initiative"), dict
+                final_payload.get("initiative"), dict
             ):
                 final_payload["initiative"] = {}
             final_payload_bytes = json.dumps(final_payload, indent=2).encode("utf-8")
-            
+
             # Define title for ZIP filenames
             ini = final_payload.get("initiative", {}) or {}
             _title = (ini.get("title") or "").strip()
             title_for_zip = (
-                    re.sub(r"[^A-Za-z0-9_-]+", "_", (_title or "solution")).strip("_")
-                    or "solution"
+                re.sub(r"[^A-Za-z0-9_-]+", "_", (_title or "solution")).strip("_")
+                or "solution"
             )
             ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            
+
             # Define ZIP filename for minimal payload path
             zip_name = f"naf_report_{title_for_zip}_{ts}.zip"
-            
+
             zip_buf = io.BytesIO()
             with zipfile.ZipFile(
-                    zip_buf, mode="w", compression=zipfile.ZIP_DEFLATED
+                zip_buf, mode="w", compression=zipfile.ZIP_DEFLATED
             ) as zf:
                 # Enforce naf_report_ prefix for artifacts
                 zf.writestr(
@@ -3505,7 +3674,7 @@ def solution_wizard_main():
                 # Include branding icon if available in minimal ZIP as well
                 try:
                     icon_path = (
-                            Path(__file__).parent.parent / "images" / "naf_icon.png"
+                        Path(__file__).parent.parent / "images" / "naf_icon.png"
                     ).resolve()
                     if icon_path.exists():
                         with open(icon_path, "rb") as f:
