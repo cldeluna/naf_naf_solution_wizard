@@ -72,6 +72,48 @@ def _sorted_deps(items):
     return sorted(items, key=lambda x: (x.get("name") or "", x.get("details") or ""))
 
 
+def _render_template_preview(payload: dict, summary_md: str) -> str:
+    """Render the Jinja template for preview, removing images."""
+    try:
+        templates_dir = (Path(__file__).parent.parent / "templates").resolve()
+        env = Environment(
+            loader=FileSystemLoader(str(templates_dir)),
+            autoescape=False,
+        )
+        tmpl = env.get_template("Solution_Design_Report.j2")
+        sdd_ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        context = {
+            "generated_timestamp": sdd_ts,
+            "highlights": summary_md,
+            "initiative": payload.get("initiative", {}),
+            "my_role": payload.get("my_role", {}),
+            "stakeholders": payload.get("stakeholders", {}),
+            "presentation": payload.get("presentation", {}),
+            "intent": payload.get("intent", {}),
+            "observability": payload.get("observability", {}),
+            "orchestration": payload.get("orchestration", {}),
+            "collector": payload.get("collector", {}),
+            "executor": payload.get("executor", {}),
+            "dependencies": payload.get("dependencies", {}),
+            "timeline": payload.get("timeline", {}),
+        }
+        
+        rendered = tmpl.render(**context)
+        
+        # Remove image references from the rendered markdown
+        import re
+        # Remove markdown image syntax: ![alt text](url)
+        rendered = re.sub(r'!\[([^\]]*)\]\([^)]+\)', r'[\1]', rendered)
+        # Remove HTML img tags
+        rendered = re.sub(r'<img[^>]+src="[^"]+"[^>]*>', '', rendered)
+        
+        return rendered
+    except Exception as e:
+        # Fallback to simple summary if template rendering fails
+        return f"Error rendering template: {e}\n\n---\n\n{summary_md}"
+
+
 def _has_list_selections(d: dict) -> bool:
     """Check if a dict contains any non-empty list values."""
     return any(isinstance(v, list) and v for v in d.values())
@@ -3275,9 +3317,12 @@ def solution_wizard_main():
                 Live preview of the report that will be written into the ZIP (naf_report_*.md).
                 """
                 st.caption(
-                    "Preview of the report that will be included in the download."
+                    "Preview of the full report that will be included in the download (images removed for preview)."
                 )
-                st.markdown(summary_md)
+                
+                # Render the Jinja template for preview
+                template_preview = _render_template_preview(payload, summary_md)
+                st.markdown(template_preview)
 
     if any_content:
         # Build a comprehensive payload including defaults for any missing sections
