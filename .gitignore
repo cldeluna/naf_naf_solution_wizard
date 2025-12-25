@@ -21,3 +21,12 @@ temp
 # Supporting Scripts
 use_case_categories_view.py
 git_push.sh
+
+api/
+tests/
+*.json
+archive/
+*test*
+scripts/
+RUN_SCRIPTS.md
+Fixing Streamlit Errors and Template.md
