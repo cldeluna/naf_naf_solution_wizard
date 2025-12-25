@@ -16,10 +16,9 @@ import streamlit as st
 
 
 def main() -> None:
-    """Landing page for the NAF‑NAF Wizard.
+    """Landing page for the NAF NAF Solution Wizard.
 
-    This page orients users to the workflow and explains how the Use Case and
-    Solution Wizard pages fit together when running as a multipage app.
+    This page orients users to the Solution Wizard functionality.
     """
 
     st.set_page_config(
@@ -31,69 +30,50 @@ def main() -> None:
     # Shared sidebar branding
     utils.render_global_sidebar()
 
-    st.title("Network Automation Forum (NAF) Network Automation Framework (NAF) Wizard App")
+    st.title("Network Automation Forum (NAF) Network Automation Framework (NAF) Solution Wizard")
     st.markdown(
         """
         This application helps you apply the Network Automation Forum's
-        **Network Automation Framework (NAF)** to your own automation projects.
-
-        The workflow is designed in two main steps:
+        **Network Automation Framework (NAF)** to your automation projects.
+        
+        Use the **Solution Wizard** to describe how you plan on designing your automation solution:
         """
     )
 
-    st.markdown("### 1. Start with the Use Case page to help you think through use cases")
+    st.markdown("### Design Your Automation Solution")
     st.markdown(
         """
-        Use the **Use Case** page to think through and **document the automation use cases** you are targeting:
+        The Solution Wizard guides you through each NAF component as well as additional consdierations for your automation solution:
+        
+        - **Initiative**: Define the problem, scope, expected use, and deployment strategy
+        - **Stakeholders**: Identify who is supporting the project
+        - **My Role**: Specify your skills and development approach
+        - **Dependencies**: List required infrastructure and systems
+        - **Timeline**: Plan staffing, milestones, and delivery schedule
 
-        - What problem are you trying to solve?
-        - Who are the primary users and stakeholders?
-        - What is in scope and out of scope?
-        - What assumptions, risks, or dependencies should be called out?
-        - What are the steps required to execute the use case?
+        NAF Components:
+        - **Presentation**: Define user types, interaction modes, and presentation tools
+        - **Intent**: Specify development approaches and provided formats
+        - **Observability**: Plan monitoring, go/no-go criteria, and tools
+        - **Orchestration**: Design workflow automation
+        - **Collector**: Plan data collection methods and tools
+        - **Executor**: Define execution methods
 
-        Treat this as a structured notepad for one or more *stories* of the automation.
-        The more clearly you define the use cases, the easier it is to build a
-        meaningful solution design.
+
+        The wizard generates a **complete solution design document** (JSON + Markdown + timeline) that you can share with:
+        - Team members who will design or build the automation
+        - Stakeholders who need to understand what the automation will do
+        - Management who need a concise overview of scope, impact, and effort
         """
     )
 
-    st.markdown("### 2. Then use the Solution Wizard page")
+    st.markdown("### Saving and Loading Your Work")
     st.markdown(
         """
-        After you have one or more use cases defined, move to the
-        **Solution Wizard** page:
-
-        - Walk through each NAF component: Presentation, Intent, Observability,
-          Orchestration, Collector, and Executor.
-        - Capture how your automation will interact with people and systems.
-        - Describe how state is represented, observed, and changed.
-        - Identify external dependencies and sketch a staffing/timeline plan.
-
-        The wizard can generate a **high‑level solution document** (JSON +
-        Markdown + timeline artifacts) that you can share with:
-
-        - Team members who will help design or build the automation.
-        - Stakeholders who need to understand what the automation will do.
-        - Management who need a concise overview of scope, impact, and effort.
-        """
-    )
-
-    st.markdown("### Navigation, State, and Downloading/Uploading Your Work")
-    st.markdown(
-        """
-        - Use the **sidebar page selector** to switch between the Use Case and
-          Solution Wizard pages.
-        - The application keeps shared information so values entered on one page
-          remain available on the others during the same session.
-        - You can iterate: refine your use case, update the solution design,
-          and re‑generate artifacts as your understanding evolves.
-        - The application allows you to save your work (uses cases and solution design) 
-          as a JSON file that you can load later.
-        - If you saved a previous session, you can load it using the **Load
-          Session** button at the top of the Solution Wizard page (this includes saved 
-          use cases and solution designs).
-
+        - The **Solution Wizard** page is where you'll design your automation solution.
+        - You can save your work as a JSON file and load it later to continue editing.
+        - The JSON file contains all your wizard inputs and can be shared with others.
+        - Use the **Load Session** button in the Solution Wizard sidebar to restore a saved design.
         """
     )
 

@@ -108,22 +108,6 @@
       ]
     }
   },
-  "use_cases": [
-    {
-      "name": "Configuration updates",
-      "description": "Updating devices manually is time consuming and error prone.\nThis use case is to update a configuration on one or more network devices \n",
-      "expected_outcome": "Expected automation outcome",
-      "category": "Configuration management",
-      "assumptions": "",
-      "trigger": "Planned event (feature add)",
-      "building_blocks": "See Solution Wizard\n",
-      "setup_task": "Create a new config file/template ",
-      "tasks": "Add/delete/change VLAN\nAdd/delete/change ACL\nAdd/delete/change SNMP community\nAdd/delete/change a BGP peer\n",
-      "deployment_strategy": "Canary",
-      "error_conditions": "Unable to update configuration. Rollback to original state",
-      "standard_deployment_strategy": ""
-    }
-  ],
   "dependencies": [
     {
       "name": "Network Infrastructure",

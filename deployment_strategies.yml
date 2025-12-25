@@ -8,3 +8,4 @@ Ramped: Slowly increases the number of new instances over time, often used for g
 InfrastructureAsCode: Uses code to provision and manage network infrastructure, ensuring consistency and reproducibility.
 ImmutableInfrastructure: Deploys new infrastructure for each change, never modifying existing resources in place.
 FeatureToggle: Enables or disables features at runtime without deploying new code, allowing controlled feature releases.
+Pilot Program: Deploys the automation to a limited group or environment for testing and feedback before full rollout.

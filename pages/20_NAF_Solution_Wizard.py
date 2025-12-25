@@ -49,6 +49,14 @@ except Exception:  # pragma: no cover
     _hol = None
 
 
+# --- Module-level constants ---
+# Default values to avoid repetition
+DEFAULT_TITLE = "My new network automation project"
+DEFAULT_DESCRIPTION = "Here is a short description of my new network automation project"
+DEFAULT_DEPLOYMENT_STRATEGY_PLACEHOLDER = "— Select a deployment strategy —"
+DEFAULT_CATEGORY_PLACEHOLDER = "— Select a category —"
+
+
 # Utility functions moved to utils.py - local aliases for brevity
 join_human = utils.join_human
 md_line = utils.md_line
@@ -67,12 +75,7 @@ def _sorted_deps(items):
 
 def _has_list_selections(d: dict) -> bool:
     """Check if a dict contains any non-empty list values."""
-    if not isinstance(d, dict):
-        return False
-    for val in d.values():
-        if isinstance(val, list) and len(val) > 0:
-            return True
-    return False
+    return any(isinstance(v, list) and v for v in d.values())
 
 
 def _norm_role_choice(choice, other, sentinel="— Select one —"):
@@ -192,8 +195,8 @@ def _has_any_content(p: dict) -> bool:
 
         tl_flag = bool((tl.get("staffing_plan_md") or "").strip())
 
-        default_title = "My new network automation project"
-        default_desc = "Here is a short description of my my new network automation project"
+        default_title = DEFAULT_TITLE
+        default_desc = DEFAULT_DESCRIPTION
         title = (ini.get("title") or "").strip()
         desc = (ini.get("description") or "").strip()
         ini_flag = bool(
@@ -218,11 +221,22 @@ def _has_any_content(p: dict) -> bool:
 def solution_wizard_main():
     """
     Solution Wizard (NAF Framework) interactive page
-
+    
+    A comprehensive tool for designing network automation solutions using the 
+    Network Automation Forum's Network Automation Framework (NAF).
+    
     Includes guided inputs for:
-    - Presentation, Intent, Observability, Orchestration, Collector, and Executor
-    - Collector now includes a dedicated "Collection tools" selector (e.g., SuzieQ, Catalyst Center, Nexus Dashboard, ACI APIC, Arista CVP, Prometheus)
-
+    - Initiative: Title, description, category, problem statement, expected use, 
+      error conditions, assumptions, deployment strategy
+    - Stakeholders: Who is supporting the project
+    - My Role: Who is filling out the wizard and their skills
+    - Presentation: User types, interaction modes, presentation tools, authentication
+    - Intent: Development approaches, provided formats
+    - Observability: Methods, go/no-go criteria, additional logic, tools
+    - Orchestration: Choice and details for workflow automation
+    - Collector: Methods, authentication, handling, normalization, scale, tools
+    - Executor: Methods for executing automation
+    
     Planning section:
     - "Staffing, Timeline, & Milestones" with:
       - Staffing fields (direct staff count and markdown-supported staffing plan)
@@ -231,37 +245,24 @@ def solution_wizard_main():
       - Business-day scheduling that skips weekends and optionally public holidays (via python-holidays)
       - Optional Plotly Gantt chart visualization
       - Summary callouts for expected delivery date (st.success) and approximate duration in months/years (st.info)
-
-    Highlights & export:
-    - Solution Highlights suppress default/empty content (e.g., default timeline and default dependencies are hidden)
-    - Exports consolidated payload to JSON in st.session_state["solution_wizard"], including:
-      - presentation/intent/observability/orchestration/collector/executor narratives and selections
-      - timeline: start_date, total_business_days, projected_completion, staff_count, staffing_plan_md, holiday_region, and detailed items
-
-    Initiative basics & sync behavior:
-    - Fields: Title, Short description/scope, Expected use, Out of scope, Detailed description (Markdown)
-    - One-way sync to Business Case: when visiting the Business Case page, these values will populate if its fields are empty or still at defaults.
-    - Business Case does not overwrite the Wizard values automatically.
-
+    
+    Dependencies section:
+    - Add/remove network infrastructure dependencies
+    - Default dependencies: Network Infrastructure, Revision Control system
+    
+    Export functionality:
+    - Download complete solution design as ZIP with JSON and Markdown files
+    - Upload previously saved JSON to restore wizard state
+    - Solution Design Document template with all sections
+    
     ==================================================================================
-    STATE PERSISTENCE
+    STATE PERSISTENCE (LEGACY)
     ==================================================================================
-    Streamlit clears widget keys from st.session_state when the widget is not rendered
-    (i.e., when navigating away from a page). To preserve user input across navigation,
-    we use a "backing key" pattern:
-
-    1. BACKING KEYS:
-       - "_wizard_data": dict storing scalar field values (text inputs, text areas, etc.)
-       - "_wizard_checkboxes": dict storing checkbox/toggle states with prefixed keys
-
-    2. SAVE MECHANISM (on JSON upload or state change):
-       - All relevant widget values are copied into the backing dicts
-       - Checkbox keys are identified by prefix patterns and stored in _wizard_checkboxes
-
-    3. RESTORE MECHANISM (on page load):
-       - If "_wizard_data" exists, iterate and restore keys not already in session_state
-       - If "_wizard_checkboxes" exists, restore checkbox states similarly
-       - This runs before widgets render, so widgets pick up the restored values
+    Previously used backing storage pattern for inter-page navigation.
+    With single-page operation, widget state persists naturally.
+    Legacy code marked for potential removal:
+    - "_wizard_data": dict storing scalar field values 
+    - "_wizard_checkboxes": dict storing checkbox/toggle states
 
     ==================================================================================
     GUI FIELD TO VARIABLE MAPPING
@@ -520,9 +521,10 @@ def solution_wizard_main():
             st.session_state["_wizard_error_conditions"] = ""
             st.session_state["_wizard_assumptions"] = ""
             st.session_state["_wizard_deployment_strategy"] = ""
+            st.session_state["_wizard_deployment_strategy_other"] = ""
             st.session_state["_wizard_deployment_strategy_description"] = ""
             st.session_state["_wizard_out_of_scope"] = ""
-            st.session_state["_wizard_category"] = "— Select a category —"
+            st.session_state["_wizard_category"] = DEFAULT_CATEGORY_PLACEHOLDER
             st.session_state["_wizard_category_other"] = ""
             st.session_state["no_move_forward"] = ""
             # Set no_move_forward_reasons to placeholder for reset
@@ -686,9 +688,28 @@ def solution_wizard_main():
                                     ini.get("assumptions") or ""
                                 )
                             if ini.get("deployment_strategy") is not None:
-                                st.session_state["_wizard_deployment_strategy"] = str(
-                                    ini.get("deployment_strategy") or ""
-                                )
+                                deploy_strategy = str(ini.get("deployment_strategy") or "")
+                                # Check if the deployment strategy is in the predefined list
+                                deploy_yaml_path = Path(__file__).parent.parent / "deployment_strategies.yml"
+                                try:
+                                    with open(deploy_yaml_path, "r") as f:
+                                        deploy_data = yaml.safe_load(f)
+                                    deploy_options = list(deploy_data.keys()) if deploy_data else []
+                                except Exception:
+                                    deploy_options = []
+                                
+                                if deploy_strategy in deploy_options:
+                                    # It's a standard strategy
+                                    st.session_state["_wizard_deployment_strategy"] = deploy_strategy
+                                    st.session_state["_wizard_deployment_strategy_other"] = ""
+                                elif deploy_strategy and deploy_strategy != DEFAULT_DEPLOYMENT_STRATEGY_PLACEHOLDER:
+                                    # It's a custom strategy, put it in "Other"
+                                    st.session_state["_wizard_deployment_strategy"] = "Other"
+                                    st.session_state["_wizard_deployment_strategy_other"] = deploy_strategy
+                                else:
+                                    # Empty or placeholder
+                                    st.session_state["_wizard_deployment_strategy"] = DEFAULT_DEPLOYMENT_STRATEGY_PLACEHOLDER
+                                    st.session_state["_wizard_deployment_strategy_other"] = ""
                             if ini.get("deployment_strategy_description") is not None:
                                 st.session_state["_wizard_deployment_strategy_description"] = str(
                                     ini.get("deployment_strategy_description") or ""
@@ -778,9 +799,17 @@ def solution_wizard_main():
                             # Stakeholders
                             stakeholders = data.get("stakeholders", {}) or {}
                             if stakeholders.get("choices") is not None:
-                                st.session_state["stakeholders_choices"] = stakeholders.get("choices") or {}
+                                # Ensure choices is a dictionary
+                                choices = stakeholders.get("choices")
+                                if isinstance(choices, dict):
+                                    # Use choices as-is since we no longer support old category names
+                                    st.session_state["stakeholders_choices"] = choices
+                                else:
+                                    st.session_state["stakeholders_choices"] = {}
+                            else:
+                                st.session_state["stakeholders_choices"] = {}
                             if stakeholders.get("other") is not None:
-                                st.session_state["stakeholders_other_text"] = stakeholders.get("other") or ""
+                                st.session_state["stakeholders_other_text"] = str(stakeholders.get("other") or "")
 
                             # Presentation
                             pres = data.get("presentation", {}) or {}
@@ -1146,8 +1175,9 @@ def solution_wizard_main():
                                         st.session_state[f"_tl_duration_{i}"] = int(r.get("duration", 0))
                                         st.session_state[f"_tl_notes_{i}"] = r.get("notes", "")
 
-                            # Store all wizard data in a single backing dict that won't be cleared
-                            # when navigating away (widget keys get cleared, but regular keys don't)
+                            # LEGACY: Store all wizard data in backing storage for inter-page navigation
+                            # No longer needed with single-page operation
+                            # TODO: Remove this entirely after confirming stability
                             st.session_state["_wizard_data"] = {
                                 "my_role_who": st.session_state.get("my_role_who"),
                                 "my_role_skills": st.session_state.get("my_role_skills"),
@@ -1168,6 +1198,7 @@ def solution_wizard_main():
                                 "_wizard_error_conditions": st.session_state.get("_wizard_error_conditions"),
                                 "_wizard_assumptions": st.session_state.get("_wizard_assumptions"),
                                 "_wizard_deployment_strategy": st.session_state.get("_wizard_deployment_strategy"),
+                                "_wizard_deployment_strategy_other": st.session_state.get("_wizard_deployment_strategy_other"),
                                 "_wizard_deployment_strategy_description": st.session_state.get("_wizard_deployment_strategy_description"),
                                 "_wizard_out_of_scope": st.session_state.get("_wizard_out_of_scope"),
                                 "no_move_forward": st.session_state.get("no_move_forward"),
@@ -1205,7 +1236,9 @@ def solution_wizard_main():
 
     # --------------- END of SIDEBAR -----------------
 
-    # Restore widget keys from backing storage if they were cleared by navigation
+    # LEGACY: Restore widget keys from backing storage (no longer needed with single page)
+    # This was required when navigating between pages because Streamlit clears widget state
+    # TODO: Consider removing this entirely after confirming single-page operation is stable
     if "_wizard_data" in st.session_state:
         wd = st.session_state["_wizard_data"]
         for key, value in wd.items():
@@ -1260,16 +1293,13 @@ def solution_wizard_main():
 
     # -------- Inputs --------
 
-    # Automation Project Title & Short Description (shared with Business Case page)
+    # Automation Project Title & Short Description
     with st.expander(
             "Automation Project Problem Statement & Description (Why is this Automation needed?)",
             expanded=False,
     ):
         # Includes title, short description/scope, expected use, out of scope, and detailed description.
 
-        st.caption(
-            "One-way sync to Business Case when empty or default: Title, Short description, Expected use, Out of scope, and Detailed description."
-        )
         # Initialize defaults - use _wizard_ keys directly as widget keys
         # When JSON is uploaded, these keys are cleared and reset, so widgets pick up new values
         if "_wizard_automation_title" not in st.session_state:
@@ -1290,12 +1320,14 @@ def solution_wizard_main():
             st.session_state["_wizard_assumptions"] = ""
         if "_wizard_deployment_strategy" not in st.session_state:
             st.session_state["_wizard_deployment_strategy"] = ""
+        if "_wizard_deployment_strategy_other" not in st.session_state:
+            st.session_state["_wizard_deployment_strategy_other"] = ""
         if "_wizard_deployment_strategy_description" not in st.session_state:
             st.session_state["_wizard_deployment_strategy_description"] = ""
         if "_wizard_out_of_scope" not in st.session_state:
             st.session_state["_wizard_out_of_scope"] = ""
         if "_wizard_category" not in st.session_state:
-            st.session_state["_wizard_category"] = "— Select a category —"
+            st.session_state["_wizard_category"] = DEFAULT_CATEGORY_PLACEHOLDER
         if "_wizard_category_other" not in st.session_state:
             st.session_state["_wizard_category_other"] = ""
 
@@ -1321,7 +1353,7 @@ def solution_wizard_main():
         except Exception:
             category_options = []
         # Add placeholder as first option
-        placeholder = "— Select a category —"
+        placeholder = DEFAULT_CATEGORY_PLACEHOLDER
         category_options_with_placeholder = [placeholder] + category_options
         current_cat = st.session_state.get("_wizard_category", "") or placeholder
         if current_cat not in category_options_with_placeholder:
@@ -1396,18 +1428,22 @@ def solution_wizard_main():
             deploy_options = list(deploy_data.keys()) if deploy_data else []
         except Exception:
             deploy_options = []
-        # Add placeholder as first option
-        deploy_placeholder = "— Select a deployment strategy —"
-        deploy_options_with_placeholder = [deploy_placeholder] + deploy_options
+        # Add placeholder and "Other" options
+        deploy_placeholder = DEFAULT_DEPLOYMENT_STRATEGY_PLACEHOLDER
+        deploy_options_with_placeholder = [deploy_placeholder] + deploy_options + ["Other"]
         
         # Initialize the session state if not set
         if "_wizard_deployment_strategy" not in st.session_state:
             st.session_state["_wizard_deployment_strategy"] = deploy_placeholder
+        if "_wizard_deployment_strategy_other" not in st.session_state:
+            st.session_state["_wizard_deployment_strategy_other"] = ""
         
         current_deploy = st.session_state.get("_wizard_deployment_strategy", deploy_placeholder)
         if current_deploy not in deploy_options_with_placeholder:
-            current_deploy = deploy_placeholder
-            st.session_state["_wizard_deployment_strategy"] = deploy_placeholder
+            # If the current value is not in the list, move it to "Other"
+            st.session_state["_wizard_deployment_strategy_other"] = current_deploy
+            current_deploy = "Other"
+            st.session_state["_wizard_deployment_strategy"] = "Other"
         
         deploy_sel = st.selectbox(
             "Standard Deployment Strategy",
@@ -1416,10 +1452,18 @@ def solution_wizard_main():
             if current_deploy in deploy_options_with_placeholder
             else 0,
             key="_wizard_deployment_strategy",
-            help="Select a standard deployment strategy from the list.",
+            help="Select a standard deployment strategy from the list or choose 'Other' to enter a custom strategy.",
         )
         
-        if deploy_sel == deploy_placeholder:
+        # Show text input if "Other" is selected
+        if deploy_sel == "Other":
+            st.text_input(
+                "Custom Deployment Strategy",
+                key="_wizard_deployment_strategy_other",
+                help="Enter your custom deployment strategy name.",
+                placeholder="e.g., Pilot Program"
+            )
+        elif deploy_sel == deploy_placeholder:
             st.info("💡 Please select a deployment strategy from the list above.")
 
         st.text_area(
@@ -1473,6 +1517,13 @@ def solution_wizard_main():
             key="no_move_forward",
         )
 
+        # Get the actual deployment strategy value
+        actual_deployment_strategy = st.session_state.get("_wizard_deployment_strategy", "")
+        if actual_deployment_strategy == "Other":
+            actual_deployment_strategy = st.session_state.get("_wizard_deployment_strategy_other", "")
+        
+        # DUPLICATE: This payload building logic is now handled by wizard_data.build_wizard_payload()
+        # TODO: Consider replacing this with a call to wizard_data.build_wizard_payload(st.session_state)
         payload["initiative"] = {
             "title": st.session_state.get("_wizard_automation_title", ""),
             "description": st.session_state.get("_wizard_automation_description", ""),
@@ -1481,7 +1532,7 @@ def solution_wizard_main():
             "expected_use": st.session_state.get("_wizard_expected_use", ""),
             "error_conditions": st.session_state.get("_wizard_error_conditions", ""),
             "assumptions": st.session_state.get("_wizard_assumptions", ""),
-            "deployment_strategy": st.session_state.get("_wizard_deployment_strategy", "") if st.session_state.get("_wizard_deployment_strategy", "") != "— Select a deployment strategy —" else "",
+            "deployment_strategy": actual_deployment_strategy if actual_deployment_strategy != DEFAULT_DEPLOYMENT_STRATEGY_PLACEHOLDER else "",
             "deployment_strategy_description": st.session_state.get("_wizard_deployment_strategy_description", ""),
             "out_of_scope": st.session_state.get("_wizard_out_of_scope", ""),
             "no_move_forward": no_move_forward,
@@ -1591,13 +1642,22 @@ def solution_wizard_main():
                 continue
             st.subheader(cat)
             key = f"stakeholders_choice_{_sanitize_title(cat)}"
-            if key not in st.session_state:
+            # Initialize from restored choices if available
+            if key not in st.session_state and cat in choices:
+                st.session_state[key] = choices[cat] if choices[cat] else SENTINEL_SELECT
+            elif key not in st.session_state:
                 st.session_state[key] = SENTINEL_SELECT
             select_opts = [SENTINEL_SELECT] + [str(o) for o in opts if str(o).strip()]
+            # Calculate the correct index based on the current value
+            current_value = st.session_state.get(key, SENTINEL_SELECT)
+            try:
+                index = select_opts.index(current_value) if current_value in select_opts else 0
+            except ValueError:
+                index = 0
             st.selectbox(
                 "",
                 options=select_opts,
-                index=0,
+                index=index,
                 key=key,
                 help=stakeholder_help.get(cat, ""),
             )
@@ -2880,10 +2940,8 @@ def solution_wizard_main():
             for k in ("who", "skills", "developer")
         )
         ini = payload.get("initiative", {}) or {}
-        default_title = "My new network automation project"
-        default_desc = (
-            "Here is a short description of my my new network automation project"
-        )
+        default_title = DEFAULT_TITLE
+        default_desc = DEFAULT_DESCRIPTION
         _title = (ini.get("title") or "").strip()
         _desc = (ini.get("description") or "").strip()
         ini_nondefault = bool(
@@ -2920,10 +2978,8 @@ def solution_wizard_main():
         # Initiative (suppress known defaults)
         ini = payload.get("initiative", {})
         ini_lines = []
-        default_title = "My new network automation project"
-        default_desc = (
-            "Here is a short description of my my new network automation project"
-        )
+        default_title = DEFAULT_TITLE
+        default_desc = DEFAULT_DESCRIPTION
         _title = (ini.get("title") or "").strip()
         _desc = (ini.get("description") or "").strip()
         _out = (ini.get("out_of_scope") or "").strip()
@@ -3352,10 +3408,8 @@ def solution_wizard_main():
                 any(_has_list_selections(v) for v in sel.values()) or role_nonempty
         )
         ini = payload.get("initiative", {}) or {}
-        default_title = "My new network automation project"
-        default_desc = (
-            "Here is a short description of my my new network automation project"
-        )
+        default_title = DEFAULT_TITLE
+        default_desc = DEFAULT_DESCRIPTION
         _title = (ini.get("title") or "").strip()
         _desc = (ini.get("description") or "").strip()
         ini_nondefault = bool(
@@ -3401,10 +3455,8 @@ def solution_wizard_main():
             for k in ("who", "skills", "developer")
         )
         ini = payload.get("initiative", {}) or {}
-        default_title = "My new network automation project"
-        default_desc = (
-            "Here is a short description of my my new network automation project"
-        )
+        default_title = DEFAULT_TITLE
+        default_desc = DEFAULT_DESCRIPTION
         _title = (ini.get("title") or "").strip()
         _desc = (ini.get("description") or "").strip()
         ini_nondefault = bool(

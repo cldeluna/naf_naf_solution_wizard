@@ -1,4 +1,7 @@
 # Python-generated files
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
 __pycache__/
 *.py[oc]
 build/
@@ -23,10 +26,35 @@ use_case_categories_view.py
 git_push.sh
 
 api/
-tests/
-*.json
+#tests/
+#*.json
 archive/
-*test*
+tests/archive/
+# *test*
 scripts/
+tests/README.md
 RUN_SCRIPTS.md
 Fixing Streamlit Errors and Template.md
+
+# generated files
+*.log
+.coverage
+htmlcov/
+
+# IDE/Editor files
+.swp
+.swo
+*~
+
+run_all_tests.py
+test_lorem.py
+tests/__init__.py
+tests/exports/
+tests/generated/
+tests/naf_report_lorem_test_20251224_125406.json
+tests/results/
+tests/run_lorem_test.py
+tests/test_data_generator.py
+tests/test_streamlit_ui.py
+tests/test_streamlit_upload_integration.py
+tests/upload_validator.py
