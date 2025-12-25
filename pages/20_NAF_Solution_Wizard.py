@@ -693,6 +693,23 @@ def solution_wizard_main():
                                 st.session_state["_wizard_deployment_strategy_description"] = str(
                                     ini.get("deployment_strategy_description") or ""
                                 )
+                            if ini.get("category") is not None:
+                                # Check if the category is in the predefined list
+                                yaml_path = Path(__file__).parent.parent / "use_case_categories.yml"
+                                try:
+                                    with open(yaml_path, "r") as f:
+                                        categories_data = yaml.safe_load(f)
+                                    category_options = list(categories_data.keys()) if categories_data else []
+                                except Exception:
+                                    category_options = []
+                                
+                                category_value = ini.get("category")
+                                if category_value in category_options:
+                                    st.session_state["_wizard_category"] = category_value
+                                    st.session_state["_wizard_category_other"] = ""
+                                else:
+                                    st.session_state["_wizard_category"] = "Other"
+                                    st.session_state["_wizard_category_other"] = category_value or ""
                             if ini.get("out_of_scope") is not None:
                                 st.session_state["_wizard_out_of_scope"] = str(
                                     ini.get("out_of_scope") or ""
@@ -757,6 +774,13 @@ def solution_wizard_main():
                                         "Other (fill in)"
                                     )
                                     st.session_state["my_role_dev_other"] = dev
+
+                            # Stakeholders
+                            stakeholders = data.get("stakeholders", {}) or {}
+                            if stakeholders.get("choices") is not None:
+                                st.session_state["stakeholders_choices"] = stakeholders.get("choices") or {}
+                            if stakeholders.get("other") is not None:
+                                st.session_state["stakeholders_other_text"] = stakeholders.get("other") or ""
 
                             # Presentation
                             pres = data.get("presentation", {}) or {}
@@ -1052,33 +1076,20 @@ def solution_wizard_main():
                             tl = data.get("timeline", {}) or {}
                             if tl.get("build_buy") is not None:
                                 st.session_state["timeline_build_buy"] = tl.get("build_buy")
-                                st.session_state["_timeline_build_buy"] = tl.get("build_buy")
                             if tl.get("staff_count") is not None:
                                 st.session_state["timeline_staff_count"] = int(
-                                    tl.get("staff_count") or 0
-                                )
-                                st.session_state["_timeline_staff_count"] = int(
                                     tl.get("staff_count") or 0
                                 )
                             if tl.get("external_staff_count") is not None:
                                 st.session_state["timeline_external_staff_count"] = int(
                                     tl.get("external_staff_count") or 0
                                 )
-                                st.session_state["_timeline_external_staff_count"] = int(
-                                    tl.get("external_staff_count") or 0
-                                )
                             if tl.get("staffing_plan_md") is not None:
                                 st.session_state["timeline_staffing_plan"] = tl.get(
                                     "staffing_plan_md"
                                 )
-                                st.session_state["_timeline_staffing_plan"] = tl.get(
-                                    "staffing_plan_md"
-                                )
                             if tl.get("holiday_region") is not None:
                                 st.session_state["timeline_holiday_region"] = (
-                                        tl.get("holiday_region") or "None"
-                                )
-                                st.session_state["_timeline_holiday_region"] = (
                                         tl.get("holiday_region") or "None"
                                 )
                             if tl.get("start_date"):
@@ -1096,7 +1107,6 @@ def solution_wizard_main():
                                         parsed = None
                                 if parsed is not None:
                                     st.session_state["timeline_start_date"] = parsed
-                                    st.session_state["_timeline_start_date_input"] = parsed
 
                             # Timeline milestones from items
                             items = tl.get("items") or []
@@ -1228,14 +1238,14 @@ def solution_wizard_main():
         st.caption(
             "Source: https://github.com/Network-Automation-Forum/reference/blob/main/docs/Framework/Framework.md"
         )
-        st.markdown("This Wizard will help you define the WHY, WHO, HOW, and WHAT of your automation project.")
+
         st.info("🔽  Expand each section to get started!")
 
     with col_text:
         st.subheader("Solution Wizard")
         st.markdown(
             """
-            The Solution Wizard helps you think through your automation project using the Network Automation Forum's (NAF) [Network Automation Framework](https://reference.networkautomation.forum/Framework/Framework/) (yes NAF NAF).
+            The Solution Wizard will help you define the WHY, WHO, HOW, and WHAT of your automation project. It will help you think through your automation project using the Network Automation Forum's (NAF) [Network Automation Framework](https://reference.networkautomation.forum/Framework/Framework/) (yes NAF NAF).
 
             - **Purpose:** Guide structured thinking across the NAF components so you identify stakeholders, scope, data flows, and build/buy/support decisions.
             - **Second set of eyes:** Use it as a checklist to ensure you’ve considered all key components; the framework helps make sure nothing critical is missed.

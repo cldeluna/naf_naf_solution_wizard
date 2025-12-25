@@ -11,16 +11,18 @@ Generated: {{ generated_timestamp }}
 
 ## Scope
 {{ initiative["description"] or '' }}
-{% if initiative["category"] -%}
-
 ## Category
+{% if initiative["category"] and initiative["category"]|trim != "" -%}
 {{ initiative["category"] or '' }}
-{% endif -%}
-{% if initiative["problem_statement"] -%}
-
+{% else -%}
+Category input was not provided.
+{% endif %}
 ## Problem Statement
+{% if initiative["problem_statement"] and initiative["problem_statement"]|trim != "" -%}
 {{ initiative["problem_statement"] or '' }}
-{% endif -%}
+{% else -%}
+Problem statement input was not provided.
+{% endif %}
 
 ## Out of scope
 {{ initiative["out_of_scope"] or '' }}
@@ -29,26 +31,30 @@ Generated: {{ generated_timestamp }}
 ## Expected use
 {{ initiative["expected_use"] or '' }}
 {% endif -%}
-{% if initiative["error_conditions"] -%}
-
 ## Error Conditions
+{% if initiative["error_conditions"] and initiative["error_conditions"]|trim != "" -%}
 {{ initiative["error_conditions"] or '' }}
-{% endif -%}
-{% if initiative["assumptions"] -%}
-
+{% else -%}
+Error conditions input was not provided.
+{% endif %}
 ## Assumptions
+{% if initiative["assumptions"] and initiative["assumptions"]|trim != "" -%}
 {{ initiative["assumptions"] or '' }}
-{% endif -%}
-{% if initiative["deployment_strategy"] -%}
-
+{% else -%}
+Assumptions input was not provided.
+{% endif %}
 ## Deployment Strategy
+{% if initiative["deployment_strategy"] and initiative["deployment_strategy"]|trim != "" -%}
 {{ initiative["deployment_strategy"] or '' }}
-{% endif -%}
-{% if initiative["deployment_strategy_description"] -%}
-
+{% else -%}
+Deployment strategy input was not provided.
+{% endif %}
 ## Deployment Strategy Description
+{% if initiative["deployment_strategy_description"] and initiative["deployment_strategy_description"]|trim != "" -%}
 {{ initiative["deployment_strategy_description"] or '' }}
-{% endif -%}
+{% else -%}
+Deployment strategy description input was not provided.
+{% endif %}
 {% set _reasons = initiative["no_move_forward_reasons"] if 'no_move_forward_reasons' in initiative else [] %}
 {% set _no_move = (initiative["no_move_forward"] if 'no_move_forward' in initiative else '')|trim %}
 {% if _no_move or (_reasons and _reasons|length > 0) -%}
@@ -85,15 +91,6 @@ Generated: {{ generated_timestamp }}
 {% endif %}
 {% else -%}
 No stakeholder information provided
-{% endif %}
-
-## Automation Use Cases Summary
-{% if use_cases and use_cases|length > 0 -%}
-{% for uc in use_cases -%}
-- Use Case {{ loop.index }}: {{ uc["name"] or '(Untitled)' }}
-{% endfor -%}
-{% else -%}
-_This solution design focuses on the initiative scope rather than specific use cases._
 {% endif %}
 
 ---
