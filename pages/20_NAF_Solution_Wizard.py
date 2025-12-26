@@ -720,6 +720,10 @@ def solution_wizard_main():
 
                             # Load Initiative data
                             ini = data.get("initiative", {}) or {}
+                            if ini.get("author") is not None:
+                                st.session_state["_wizard_author"] = str(
+                                    ini.get("author") or ""
+                                )
                             if ini.get("title") is not None:
                                 st.session_state["_wizard_automation_title"] = str(
                                     ini.get("title") or ""
