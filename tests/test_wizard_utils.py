@@ -1,6 +1,6 @@
 import pytest
 
-from wizard_utils import join_human, md_line, is_meaningful
+from utils import join_human, md_line, is_meaningful
 
 
 def test_join_human_empty_and_none():

@@ -39,6 +39,8 @@ import datetime
 import pandas as pd
 import streamlit as st
 import plotly.express as px
+import getpass
+import os
 
 import utils
 
@@ -1464,6 +1466,13 @@ def solution_wizard_main():
 
         # Initialize defaults - use _wizard_ keys directly as widget keys
         # When JSON is uploaded, these keys are cleared and reset, so widgets pick up new values
+        if "_wizard_author" not in st.session_state:
+            try:
+                # Try to get system username
+                st.session_state["_wizard_author"] = getpass.getuser()
+            except Exception:
+                # Fallback to personalizing content
+                st.session_state["_wizard_author"] = os.environ.get("USER", os.environ.get("USERNAME", "System User"))
         if "_wizard_automation_title" not in st.session_state:
             st.session_state["_wizard_automation_title"] = (
                 "My new network automation project"
@@ -1495,6 +1504,13 @@ def solution_wizard_main():
         if "_wizard_category_other" not in st.session_state:
             st.session_state["_wizard_category_other"] = ""
 
+        # Author field (above title)
+        st.text_input(
+            "Author",
+            key="_wizard_author",
+            help="Name of the person creating this automation initiative",
+        )
+        
         col_ib1, col_ib2 = st.columns([2, 3])
         with col_ib1:
             st.text_input(
@@ -1708,6 +1724,7 @@ def solution_wizard_main():
         # DUPLICATE: This payload building logic is now handled by wizard_data.build_wizard_payload()
         # TODO: Consider replacing this with a call to wizard_data.build_wizard_payload(st.session_state)
         payload["initiative"] = {
+            "author": st.session_state.get("_wizard_author", ""),
             "title": st.session_state.get("_wizard_automation_title", ""),
             "description": st.session_state.get("_wizard_automation_description", ""),
             "category": initiative_category,

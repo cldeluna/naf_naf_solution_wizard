@@ -51,10 +51,5 @@ test_lorem.py
 tests/__init__.py
 tests/exports/
 tests/generated/
-tests/naf_report_lorem_test_20251224_125406.json
 tests/results/
-tests/run_lorem_test.py
-tests/test_data_generator.py
-tests/test_streamlit_ui.py
-tests/test_streamlit_upload_integration.py
-tests/upload_validator.py
+tests/naf_report_lorem_test_20251224_125406.json

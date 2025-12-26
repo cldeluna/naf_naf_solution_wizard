@@ -8,6 +8,12 @@ Generated: {{ generated_timestamp }}
 ## Overview of Automation Initiative
 # {{ initiative["title"] or '' }}
 ---
+Author: 
+{% if initiative["author"] and initiative["author"]|trim != "" -%}
+{{ initiative["author"] }}
+{% else -%}
+Author information not provided.
+{% endif %}
 
 ## Scope
 {{ initiative["description"] or '' }}

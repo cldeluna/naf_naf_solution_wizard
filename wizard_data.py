@@ -256,7 +256,7 @@ def build_wizard_payload(session_state: Dict[str, Any]) -> Dict[str, Any]:
             "expected_use": session_state.get("_wizard_expected_use", ""),
             "error_conditions": session_state.get("_wizard_error_conditions", ""),
             "assumptions": session_state.get("_wizard_assumptions", ""),
-            "deployment_strategy": session_state.get("_wizard_deployment_strategy", ""),
+            "deployment_strategy": deployment_strategy,
             "deployment_strategy_other": session_state.get("_wizard_deployment_strategy_other", ""),
             "deployment_strategy_description": session_state.get("_wizard_deployment_strategy_description", ""),
             "out_of_scope": session_state.get("_wizard_out_of_scope", ""),
@@ -599,6 +599,11 @@ def restore_session_state_from_data(data: Dict[str, Any]) -> Dict[str, Any]:
     
     # Extract initiative data
     ini = data.get("initiative", {})
+    if ini.get("author") is not None:
+        updates["_wizard_author"] = str(ini.get("author") or "")
+    elif "author" in ini:
+        # Handle case where author exists but is None
+        updates["_wizard_author"] = ""
     if ini.get("title") is not None:
         updates["_wizard_automation_title"] = str(ini.get("title") or "")
     if ini.get("description") is not None:
