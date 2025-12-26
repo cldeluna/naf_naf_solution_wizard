@@ -10,3 +10,6 @@ dependencies = [
     "pyyaml>=6.0.3",
     "streamlit>=1.51.0",
 ]
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = ["tests/archive", ".*", "build", "dist", "CVS", "_darcs", "{arch}", "*.egg"]
