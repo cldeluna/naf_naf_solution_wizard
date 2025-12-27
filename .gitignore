@@ -53,3 +53,4 @@ tests/exports/
 tests/generated/
 tests/results/
 tests/naf_report_lorem_test_20251224_125406.json
+.devcontainer
