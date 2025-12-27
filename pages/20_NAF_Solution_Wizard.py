@@ -575,7 +575,7 @@ def solution_wizard_main():
             )
             st.session_state["_wizard_error_conditions"] = ""
             st.session_state["_wizard_assumptions"] = ""
-            st.session_state["_wizard_deployment_strategy"] = ""
+            st.session_state["_wizard_deployment_strategy"] = DEFAULT_DEPLOYMENT_STRATEGY_PLACEHOLDER
             st.session_state["_wizard_deployment_strategy_other"] = ""
             st.session_state["_wizard_deployment_strategy_description"] = ""
             st.session_state["_wizard_out_of_scope"] = ""
@@ -1496,7 +1496,7 @@ def solution_wizard_main():
         if "_wizard_assumptions" not in st.session_state:
             st.session_state["_wizard_assumptions"] = ""
         if "_wizard_deployment_strategy" not in st.session_state:
-            st.session_state["_wizard_deployment_strategy"] = ""
+            st.session_state["_wizard_deployment_strategy"] = DEFAULT_DEPLOYMENT_STRATEGY_PLACEHOLDER
         if "_wizard_deployment_strategy_other" not in st.session_state:
             st.session_state["_wizard_deployment_strategy_other"] = ""
         if "_wizard_deployment_strategy_description" not in st.session_state:
@@ -1632,8 +1632,8 @@ def solution_wizard_main():
         current_deploy = st.session_state.get(
             "_wizard_deployment_strategy", deploy_placeholder
         )
-        if current_deploy not in deploy_options_with_placeholder:
-            # If the current value is not in the list, move it to "Other"
+        if current_deploy not in deploy_options_with_placeholder and current_deploy != deploy_placeholder:
+            # If the current value is not in the list and not the placeholder, move it to "Other"
             st.session_state["_wizard_deployment_strategy_other"] = current_deploy
             current_deploy = "Other"
             st.session_state["_wizard_deployment_strategy"] = "Other"
