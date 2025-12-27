@@ -15,6 +15,7 @@ End User Testing: Automating tests for ensuring end user functionality.
 Text Summary: Automating the generation of text summaries for network device configurations and states.
 Observability: Automating the collection of network performance data, generating alerts, and triggering diagnostic actions for issues.
 Incident Response: Automating the response to network incidents, including alerting, triaging, and remediating issues.
-Other: Other categories not listed above.
 Security Policy Management: Automating the enforcement of network security policies, such as firewall rule changes, access control lists, and VLAN management.
+Other: Other categories not listed above.
+
 
