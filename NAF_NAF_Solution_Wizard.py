@@ -67,6 +67,14 @@ def main() -> None:
         """
     )
 
+    st.markdown("### Start Designing Your Solution")
+    
+    # Add button to navigate to the wizard page
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("🚀 Open Solution Wizard", type="primary", use_container_width=True):
+            st.switch_page("pages/20_NAF_Solution_Wizard.py")
+    
     st.markdown("### Saving and Loading Your Work")
     st.markdown(
         """
